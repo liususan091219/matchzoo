@@ -11,7 +11,7 @@ from rank_io import *
 if __name__ == '__main__':
     hist_size = int(sys.argv[1])
     srcdir = './'
-    embed_dir = "../../../MatchZoo_data/glove/glove_general/"
+    embed_dir = "/Data/work/xliu93/stackoverflow/MatchZoo_data/glove/glove_general/"
     embedfile = embed_dir + 'embed_glove_d300_norm'
     corpusfile = srcdir + 'corpus_preprocessed.txt'
 
