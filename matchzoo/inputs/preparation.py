@@ -106,6 +106,70 @@ class Preparation(object):
         f.close()
         return corpus_q, corpus_d, rels
 
+    def run_with_separate(self, srcdir, train_file, valid_file, test_file, lang):
+        qid2fold = {}
+        for file_path in list([train_file, valid_file, test_file]):
+            f = codecs.open(file_path, 'r', encoding='utf8')
+            if file_path == train_file:
+                fold = "train"
+            elif file_path == valid_file:
+                fold = "valid"
+            else:
+                fold = "test"
+            for line in f:
+                line = line
+                line = line.strip()
+                qid2fold[line] = fold
+        hashid = {}
+        corpus = {}
+        train_rels = []
+        valid_rels = []
+        test_rels = []
+        idMap = {}
+        qs = set()
+        f_corpus = codecs.open(srcdir + lang + "_qid2all.nostop.txt", "r")
+        qid2title = {}
+        for line in f_corpus:
+            tokens = line.strip("\n").split("\t")
+            qid = tokens[0]
+            title = tokens[1]
+            qid2title[qid] = title
+        f_rel = codecs.open(srcdir + lang + "_cosidf.txt", "r")
+        f_rel.readline()
+        for line in f_rel:	
+            tokens = line.strip("\n").split("\t")
+            qid1 = tokens[0]
+            qid2 = tokens[1]
+            fold1 = qid2fold[qid1]
+            if fold1 == "train":
+                rels = train_rels
+            elif fold1 == "valid":
+                rels = valid_rels
+            elif fold1 == "test":
+                rels = test_rels
+            label = tokens[3]
+            t1 = qid2title[qid1]
+            t2 = qid2title[qid2]
+            id1 = self.get_text_id(hashid, t1, 'T')
+            id2 = self.get_text_id(hashid, t2, 'T')
+            qs.add(qid1)
+            qs.add(qid2)
+            corpus[id1] = t1
+            corpus[id2] = t2
+            rels.append((label, id1, id2))
+            if qid1 in idMap:
+                assert idMap[qid1] == id1
+            else:
+                idMap[qid1] = id1
+            if qid2 in idMap:
+                assert idMap[qid2] == id2
+            else:
+                idMap[qid2] = id2
+        f_corpus.close()
+        f_rel.close()
+        return corpus, train_rels, valid_rels, test_rels, idMap
+
+
     def run_with_train_valid_test_corpus(self, train_file, valid_file, test_file):
         '''
         Run with pre-splited train_file, valid_file, test_file

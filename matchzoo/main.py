@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 from __future__ import print_function
-import os
+import os, math
 import sys
 import time
 import json
@@ -168,17 +168,65 @@ def train(config):
                         for lc_idx in range(len(list_counts)-1):
                             pre = list_counts[lc_idx]
                             suf = list_counts[lc_idx+1]
-                            res[k] += eval_func(y_true = y_true[pre:suf], y_pred = y_pred[pre:suf])
+                            res[k] += eval_score(y_true[pre:suf], y_pred[pre:suf], k, eval_func) 
                     num_valid += len(list_counts) - 1
                 else:
                     for k, eval_func in eval_metrics.items():
-                        res[k] += eval_func(y_true = y_true, y_pred = y_pred)
+                        res[k] += eval_score(y_true, y_pred, k, eval_func) 
                     num_valid += 1
             generator.reset()
             print('Iter:%d\t%s' % (i_e, '\t'.join(['%s=%f'%(k,v/num_valid) for k, v in res.items()])), end='\n')
             sys.stdout.flush()
         if (i_e+1) % save_weights_iters == 0:
             model.save_weights(weights_file % (i_e+1))
+
+def score2labellist(y_true, y_pred):
+	idx2pred = dict([(x, y_pred[x]) for x in range(0, len(y_pred))])
+	idx2true = dict([(x, y_true[x]) for x in range(0, len(y_true))])
+	sortedidx2pred = sorted(idx2pred.items(), key = lambda x:x[1], reverse=True)
+	labellist = []
+	for i in range(0, len(sortedidx2pred)):
+		idx = sortedidx2pred[i][0]
+		thislabel = idx2true[idx]	
+		labellist.append(str(thislabel))
+	return labellist
+
+def eval_score(y_true, y_pred, eval_name, eval_func):
+	labellist = score2labellist(y_true, y_pred)
+	if eval_name == "mrr":
+		return mrr(labellist)
+	elif eval_name == "ndcg@10":
+		return ndcg(labellist, 10)
+	elif eval_name == "ndcg@100":
+		return ndcg(labellist, 100)
+	else:
+		assert eval_name == "map" or eval_name.startswith("ndcg")
+		return eval_func(y_true = y_true, y_pred = y_pred)
+
+def mrr(labellist):
+        score =0
+        scorecount = 0
+        for i in range(0, len(labellist)):
+                if labellist[i] == "1":
+                        score += 1.0 / (i + 1.0)
+                        scorecount += 1
+        if scorecount == 0:
+                return 0
+        else:
+                return score / scorecount
+
+def ndcg(labellist, topK):
+        dcg = idcg = 0.0
+        for i in range(0, min(topK, len(labellist))):
+                if labellist[i] == "1":
+                        dcg += 1.0 / math.log(float(i + 2), 2.0)
+        relcount = 0
+        for i in range(0, len(labellist)):
+                if labellist[i] == "1":
+                        relcount += 1
+        for i in range(0, min(topK, relcount)):
+                idcg += 1.0 / math.log(float(i + 2), 2.0)
+	return dcg / idcg
 
 def predict(config):
     ######## Read input config ########
@@ -271,7 +319,7 @@ def predict(config):
                     for lc_idx in range(len(list_counts)-1):
                         pre = list_counts[lc_idx]
                         suf = list_counts[lc_idx+1]
-                        res[k] += eval_func(y_true = y_true[pre:suf], y_pred = y_pred[pre:suf])
+                        res[k] += eval_score(y_true[pre:suf], y_pred[pre:suf], k, eval_func) 
 
                 y_pred = np.squeeze(y_pred)
                 for lc_idx in range(len(list_counts)-1):
@@ -285,7 +333,7 @@ def predict(config):
                 num_valid += len(list_counts) - 1
             else:
                 for k, eval_func in eval_metrics.items():
-                    res[k] += eval_func(y_true = y_true, y_pred = y_pred)
+                    res[k] += eval_score(y_true, y_pred, k, eval_func)
                 for p, y, t in zip(input_data['ID'], y_pred, y_true):
                     if p[0] not in res_scores:
                         res_scores[p[0]] = {}

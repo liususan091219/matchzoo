@@ -61,7 +61,7 @@ if __name__ == '__main__':
     prepare.save_relation(dstdir + 'relation_test.txt', rel_test)
     print('Preparation finished ...')
 
-    preprocessor = Preprocess(word_stem_config={'enable': False}, word_filter_config={'min_freq': 2})
+    preprocessor = Preprocess(word_stem_config={'enable': False}, word_filter_config={'min_freq': 0})
     dids, docs = preprocessor.run(dstdir + 'corpus.txt')
     preprocessor.save_word_dict(dstdir + 'word_dict.txt', True)
     preprocessor.save_words_stats(dstdir + 'word_stats.txt', True)
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     fout = open(dstdir + 'corpus_preprocessed.txt', 'w')
     for inum, did in enumerate(dids):
         fout.write('%s %s %s\n' % (did, len(docs[inum]), ' '.join(map(str, docs[inum]))))
+    #    fout.write('%s %s\n' % (did, ' '.join(map(str, docs[inum]))))
     fout.close()
     print('Preprocess finished ...')
 

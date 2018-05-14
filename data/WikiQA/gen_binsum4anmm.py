@@ -16,7 +16,8 @@ from rank_io import *
 if __name__ == '__main__':
     bin_num = int(sys.argv[1])
     srcdir = './'
-    embedfile = srcdir + 'embed_glove_d300_norm'
+    embed_dir = "../../../MatchZoo_data/glove/glove_general/"
+    embedfile = embed_dir + 'embed_glove_d300_norm'
     corpusfile = srcdir + 'corpus_preprocessed.txt'
 
     relfiles = [ srcdir + 'relation_train.txt',
