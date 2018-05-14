@@ -10,8 +10,8 @@ import os
 import sys
 
 if __name__ == '__main__':
-
-    basedir = './WikiQACorpus/'
+    wikiqa_path = sys.argv[1]
+    basedir = wikiqa_path + '/WikiQACorpus/'
     filter_reffile = [basedir + 'WikiQA-dev-filtered.ref', basedir + 'WikiQA-test-filtered.ref']
     in_reffile = [basedir + 'WikiQA-dev.ref', basedir + 'WikiQA-test.ref']
     in_corpfile = [basedir + 'WikiQA-dev.txt', basedir + 'WikiQA-test.txt']

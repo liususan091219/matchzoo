@@ -43,7 +43,7 @@ def load_model(config):
     return mo
 
 
-def train(config):
+def train(config, data_root):
 
     print(json.dumps(config, indent=2), end='\n')
     # read basic config
@@ -51,7 +51,7 @@ def train(config):
     optimizer = global_conf['optimizer']
     optimizer=optimizers.get(optimizer)
     K.set_value(optimizer.lr, global_conf['learning_rate'])
-    weights_file = str(global_conf['weights_file']) + '.%d'
+    weights_file = data_root + str(global_conf['weights_file']) + '.%d'
     display_interval = int(global_conf['display_interval'])
     num_iters = int(global_conf['num_iters'])
     save_weights_iters = int(global_conf['save_weights_iters'])
@@ -63,7 +63,7 @@ def train(config):
 
     # collect embedding
     if 'embed_path' in share_input_conf:
-        embed_dict = read_embedding(filename=share_input_conf['embed_path'])
+        embed_dict = read_embedding(filename=data_root + share_input_conf['embed_path'])
         _PAD_ = share_input_conf['vocab_size'] - 1
         embed_dict[_PAD_] = np.zeros((share_input_conf['embed_size'], ), dtype=np.float32)
         embed = np.float32(np.random.uniform(-0.2, 0.2, [share_input_conf['vocab_size'], share_input_conf['embed_size']]))
@@ -95,11 +95,11 @@ def train(config):
         if tag != 'share' and input_conf[tag]['phase'] == 'PREDICT':
             continue
         if 'text1_corpus' in input_conf[tag]:
-            datapath = input_conf[tag]['text1_corpus']
+            datapath = data_root + input_conf[tag]['text1_corpus']
             if datapath not in dataset:
                 dataset[datapath], _ = read_data(datapath)
         if 'text2_corpus' in input_conf[tag]:
-            datapath = input_conf[tag]['text2_corpus']
+            datapath = data_root + input_conf[tag]['text2_corpus']
             if datapath not in dataset:
                 dataset[datapath], _ = read_data(datapath)
     print('[Dataset] %s Dataset Load Done.' % len(dataset), end='\n')
@@ -110,17 +110,19 @@ def train(config):
 
     for tag, conf in input_train_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[conf['text1_corpus']]
-        conf['data2'] = dataset[conf['text2_corpus']]
+        conf['data1'] = dataset[data_root +conf['text1_corpus']]
+        conf['data2'] = dataset[data_root +conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
-        train_gen[tag] = generator( config = conf )
+        print(generator)
+        train_gen[tag] = generator( data_root, config = conf )
 
     for tag, conf in input_eval_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[conf['text1_corpus']]
-        conf['data2'] = dataset[conf['text2_corpus']]
+        conf['data1'] = dataset[data_root +conf['text1_corpus']]
+        conf['data2'] = dataset[data_root +conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
-        eval_gen[tag] = generator( config = conf )
+        print(generator)
+        eval_gen[tag] = generator( data_root, config = conf )
 
     ######### Load Model #########
     model = load_model(config)
@@ -228,7 +230,7 @@ def ndcg(labellist, topK):
                 idcg += 1.0 / math.log(float(i + 2), 2.0)
 	return dcg / idcg
 
-def predict(config):
+def predict(config, data_root):
     ######## Read input config ########
 
     print(json.dumps(config, indent=2), end='\n')
@@ -237,7 +239,7 @@ def predict(config):
 
     # collect embedding
     if 'embed_path' in share_input_conf:
-        embed_dict = read_embedding(filename=share_input_conf['embed_path'])
+        embed_dict = read_embedding(filename=data_root + share_input_conf['embed_path'])
         _PAD_ = share_input_conf['vocab_size'] - 1
         embed_dict[_PAD_] = np.zeros((share_input_conf['embed_size'], ), dtype=np.float32)
         embed = np.float32(np.random.uniform(-0.02, 0.02, [share_input_conf['vocab_size'], share_input_conf['embed_size']]))
@@ -263,11 +265,11 @@ def predict(config):
     for tag in input_conf:
         if tag == 'share' or input_conf[tag]['phase'] == 'PREDICT':
             if 'text1_corpus' in input_conf[tag]:
-                datapath = input_conf[tag]['text1_corpus']
+                datapath = data_root + input_conf[tag]['text1_corpus']
                 if datapath not in dataset:
                     dataset[datapath], _ = read_data(datapath)
             if 'text2_corpus' in input_conf[tag]:
-                datapath = input_conf[tag]['text2_corpus']
+                datapath = data_root + input_conf[tag]['text2_corpus']
                 if datapath not in dataset:
                     dataset[datapath], _ = read_data(datapath)
     print('[Dataset] %s Dataset Load Done.' % len(dataset), end='\n')
@@ -277,8 +279,8 @@ def predict(config):
 
     for tag, conf in input_predict_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[conf['text1_corpus']]
-        conf['data2'] = dataset[conf['text2_corpus']]
+        conf['data1'] = data_root + dataset[conf['text1_corpus']]
+        conf['data2'] = data_root + dataset[conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
         predict_gen[tag] = generator(
                                     #data1 = dataset[conf['text1_corpus']],
@@ -362,15 +364,17 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--phase', default='train', help='Phase: Can be train or predict, the default value is train.')
     parser.add_argument('--model_file', default='./models/arci.config', help='Model_file: MatchZoo model file for the chosen model.')
+    parser.add_argument("--data_root", default="/Data/work/xliu93/stackoverflow/MatchZoo_data/", help="Data file:")
     args = parser.parse_args()
     model_file =  args.model_file
+    data_root = args.data_root
     with open(model_file, 'r') as f:
         config = json.load(f)
     phase = args.phase
     if args.phase == 'train':
-        train(config)
+        train(config, data_root)
     elif args.phase == 'predict':
-        predict(config)
+        predict(config, data_root)
     else:
         print('Phase Error.', end='\n')
     return

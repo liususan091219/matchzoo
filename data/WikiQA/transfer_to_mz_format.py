@@ -3,8 +3,9 @@
 import os
 import sys
 
+wikiqa_path = sys.argv[1]
 
-basedir = './WikiQACorpus/'
+basedir = wikiqa_path +'/WikiQACorpus/'
 dstdir = './'
 infiles = [ basedir + 'WikiQA-train.txt', basedir + 'WikiQA-dev-filtered.txt', basedir + 'WikiQA-test-filtered.txt' ]
 outfiles = [ dstdir + 'WikiQA-mz-train.txt', dstdir + 'WikiQA-mz-dev.txt', dstdir + 'WikiQA-mz-test.txt' ]
