@@ -106,7 +106,7 @@ class Preparation(object):
         f.close()
         return corpus_q, corpus_d, rels
 
-    def run_with_separate(self, srcdir, train_file, valid_file, test_file, lang):
+    def run_with_separate(self, srcdir, train_file, valid_file, test_file, lang, component):
         qid2fold = {}
         for file_path in list([train_file, valid_file, test_file]):
             f = codecs.open(file_path, 'r', encoding='utf8')
@@ -125,15 +125,32 @@ class Preparation(object):
         train_rels = []
         valid_rels = []
         test_rels = []
-        idMap = {}
+        idMap1 = {}
+        idMap2 = {}
         qs = set()
         f_corpus = codecs.open(srcdir + lang + "_qid2all.nostop.txt", "r")
+        qid2component= {}
         qid2title = {}
+        if component == "title":
+           hashtagprefix = "T"
+        elif component == "question":
+           hashtagprefix = "Q"
+        else:
+           hashtagprefix = "A"
         for line in f_corpus:
             tokens = line.strip("\n").split("\t")
             qid = tokens[0]
             title = tokens[1]
-            qid2title[qid] = title
+            question = tokens[2]
+            answer = tokens[3]
+            qid2title[qid] = title 
+            if component == "title":
+               qid2component[qid] = title
+            elif component == "question":
+               qid2component[qid] = question
+            else:
+               assert component == "answer"
+               qid2component[qid] = answer
         f_rel = codecs.open(srcdir + lang + "_cosidf.txt", "r")
         f_rel.readline()
         for line in f_rel:	
@@ -149,26 +166,25 @@ class Preparation(object):
                 rels = test_rels
             label = tokens[3]
             t1 = qid2title[qid1]
-            t2 = qid2title[qid2]
+            t2 = qid2component[qid2]
             id1 = self.get_text_id(hashid, t1, 'T')
-            id2 = self.get_text_id(hashid, t2, 'T')
+            id2 = self.get_text_id(hashid, t2, hashtagprefix)
             qs.add(qid1)
             qs.add(qid2)
             corpus[id1] = t1
             corpus[id2] = t2
             rels.append((label, id1, id2))
-            if qid1 in idMap:
-                assert idMap[qid1] == id1
+            if qid1 in idMap1:
+                assert idMap1[qid1] == id1
             else:
-                idMap[qid1] = id1
-            if qid2 in idMap:
-                assert idMap[qid2] == id2
+                idMap1[qid1] = id1
+            if qid2 in idMap2:
+                assert idMap2[qid2] == id2
             else:
-                idMap[qid2] = id2
+                idMap2[qid2] = id2
         f_corpus.close()
         f_rel.close()
-        return corpus, train_rels, valid_rels, test_rels, idMap
-
+        return corpus, train_rels, valid_rels, test_rels, idMap1, idMap2
 
     def run_with_train_valid_test_corpus(self, train_file, valid_file, test_file):
         '''

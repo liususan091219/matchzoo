@@ -61,6 +61,7 @@ def train(config, data_root):
     # read input config
     input_conf = config['inputs']
     share_input_conf = input_conf['share']
+    fout_result = open(data_root + "stackOF/result/" + lang + "/" + config["net_name"] + "." + component, "w")
 
     # collect embedding
     if 'embed_path' in share_input_conf:
@@ -163,8 +164,18 @@ def train(config, data_root):
             print('[%s]\t[Eval:%s] ' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag), end='')
             res = dict([[k,0.] for k in eval_metrics.keys()])
             num_valid = 0
+            num_test1 = 0
+            num_test2 = 0
             for input_data, y_true in genfun:
                 y_pred = model.predict(input_data, batch_size=len(y_true))
+                num_test += 1
+                if tag == "test" and i_e == 1:
+                     for x in range(0, len(y_pred)):
+                         fout_result.write(str(y_pred[x, 0]) + " ")
+                     fout_result.write("\n")
+                     for x in range(0, len(y_true)):
+                         fout_result.write(str(y_true[x]) + " ")  
+                     fout_result.write("\n")
                 if issubclass(type(generator), inputs.list_generator.ListBasicGenerator):
                     list_counts = input_data['list_counts']
                     for k, eval_func in eval_metrics.items():
@@ -177,12 +188,14 @@ def train(config, data_root):
                     for k, eval_func in eval_metrics.items():
                         res[k] += eval_score(y_true, y_pred, k, eval_func) 
                     num_valid += 1
+            print(num_test)
             print("valid num", num_valid)
             generator.reset()
             print('Iter:%d\t%s' % (i_e, '\t'.join(['%s=%f'%(k,v/num_valid) for k, v in res.items()])), end='\n')
             sys.stdout.flush()
         if (i_e+1) % save_weights_iters == 0:
             model.save_weights(weights_file % (i_e+1))
+    fout_result.close()
 
 def score2labellist(y_true, y_pred):
 	idx2pred = dict([(x, y_pred[x]) for x in range(0, len(y_pred))])
@@ -281,10 +294,10 @@ def predict(config, data_root):
 
     for tag, conf in input_predict_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[data_root + conf['text1_corpus']]
-        conf['data2'] = dataset[data_root + conf['text2_corpus']]
+        conf['data1'] = data_root + dataset[conf['text1_corpus']]
+        conf['data2'] = data_root + dataset[conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
-        predict_gen[tag] = generator(data_root,
+        predict_gen[tag] = generator(
                                     #data1 = dataset[conf['text1_corpus']],
                                     #data2 = dataset[conf['text2_corpus']],
                                      config = conf )
@@ -294,7 +307,7 @@ def predict(config, data_root):
 
     ######## Load Model ########
     global_conf = config["global"]
-    weights_file = data_root + str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters'])
+    weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters'])
 
     model = load_model(config)
     model.load_weights(weights_file)
@@ -347,13 +360,13 @@ def predict(config, data_root):
 
         if tag in output_conf:
             if output_conf[tag]['save_format'] == 'TREC':
-                with open(data_root + output_conf[tag]['save_path'], 'w') as f:
+                with open(output_conf[tag]['save_path'], 'w') as f:
                     for qid, dinfo in res_scores.items():
                         dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
                         for inum,(did, (score, gt)) in enumerate(dinfo):
                             f.write('%s\tQ0\t%s\t%d\t%f\t%s\t%s\n'%(qid, did, inum, score, config['net_name'], gt))
             elif output_conf[tag]['save_format'] == 'TEXTNET':
-                with open(data_root + output_conf[tag]['save_path'], 'w') as f:
+                with open(output_conf[tag]['save_path'], 'w') as f:
                     for qid, dinfo in res_scores.items():
                         dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
                         for inum,(did, (score, gt)) in enumerate(dinfo):

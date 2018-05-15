@@ -39,9 +39,11 @@ if __name__ == "__main__":
 	prepare = Preparation()
 	srcdir = "/Data/work/xliu93/stackoverflow/MatchZoo_data/stackOF/data_" + lang + "/"
 	word_dstdir = "/Data/work/xliu93/stackoverflow/MatchZoo_data/stackOF/" + lang + "_" + component + "/"
-	relation_dstdir = srcdir 
+	if not os.path.exists(word_dstdir):
+		os.makedirs(word_dstdir)	
+	relation_dstdir = word_dstdir 
 	splitfiles = [srcdir + lang + "_train_qid.txt", srcdir + lang + "_valid_qid.txt", srcdir + lang + "_test_qid.txt"]
-	corpus, rel_train, rel_valid, rel_test, idMap = prepare.run_with_separate(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang)
+	corpus, rel_train, rel_valid, rel_test, idMap1, idMap2 = prepare.run_with_separate(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang, component)
 	print('total corpus : %d ...' % (len(corpus)))
 	print('total relation-train : %d ...' % (len(rel_train)))
 	print('total relation-valid : %d ...' % (len(rel_valid)))
