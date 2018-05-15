@@ -174,6 +174,9 @@ class Preparation(object):
             corpus[id1] = t1
             corpus[id2] = t2
             rels.append((label, id1, id2))
+            if qid1 == "28337117" and id1 == "T17752":
+               import pdb
+               pdb.set_trace()
             if qid1 in idMap1:
                 assert idMap1[qid1] == id1
             else:

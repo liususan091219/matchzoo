@@ -25,6 +25,16 @@ def filter_triletter(tri_stats, min_filter_num=5, max_filter_num=10000):
                 tri_dict[triinfo[0]] = len(tri_dict)
     return tri_dict
 
+def write_idMap(idMap1, idMap2, word_dstdir):
+	fout1 = open(word_dstdir + "idmap1.txt", "w")
+	fout2 = open(word_dstdir + "idmap2.txt", "w")
+	for qid1, id1 in idMap1.items():	
+		fout1.write(qid1 + "\t" + id1 + "\n")
+	for qid2, id2 in idMap2.items():
+		fout2.write(qid2 + "\t" + id2 + "\n")
+	fout1.close()
+	fout2.close()
+
 def read_dict(infile):
     word_dict = {}
     for line in open(infile):
@@ -44,6 +54,7 @@ if __name__ == "__main__":
 	relation_dstdir = word_dstdir 
 	splitfiles = [srcdir + lang + "_train_qid.txt", srcdir + lang + "_valid_qid.txt", srcdir + lang + "_test_qid.txt"]
 	corpus, rel_train, rel_valid, rel_test, idMap1, idMap2 = prepare.run_with_separate(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang, component)
+	write_idMap(idMap1, idMap2, word_dstdir)
 	print('total corpus : %d ...' % (len(corpus)))
 	print('total relation-train : %d ...' % (len(rel_train)))
 	print('total relation-valid : %d ...' % (len(rel_valid)))
