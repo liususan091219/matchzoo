@@ -5,7 +5,7 @@ import sys
 import random
 import numpy as np
 import math
-
+from .m0 import mrr as cusMRR
 def _to_list(x):
     if isinstance(x, list):
         return x
@@ -30,9 +30,11 @@ def map(y_true, y_pred, rel_threshold=0):
     return s
 
 def mrr(y_true, y_pred, rel_threshold = 0.):
-    k = 10
-    s = 0.
-    return s
+    y_true = _to_list(np.squeeze(y_true).tolist())
+    y_pred = _to_list(np.squeeze(y_pred).tolist())
+    resPair = list(zip(y_true, y_pred))
+    resPair = sorted(resPair, key=lambda x: x[1], reverse=True)
+    return cusMRR([x[0] for x in resPair])
 
 def ndcg(k=10):
     def top_k(y_true, y_pred, rel_threshold=0.):
