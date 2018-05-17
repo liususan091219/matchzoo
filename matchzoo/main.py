@@ -298,6 +298,8 @@ def predict(config, data_root):
 
     model = load_model(config)
     model.load_weights(weights_file)
+    qid2ylist = {}
+    qid2gtlist = {}
 
     eval_metrics = OrderedDict()
     for mobj in config['metrics']:
@@ -308,6 +310,7 @@ def predict(config, data_root):
         else:
             eval_metrics[mobj] = metrics.get(mobj)
     res = dict([[k,0.] for k in eval_metrics.keys()])
+    avgscore = 0
 
     for tag, generator in predict_gen.items():
         genfun = generator.get_batch_generator()
@@ -333,6 +336,10 @@ def predict(config, data_root):
                         if p[0] not in res_scores:
                             res_scores[p[0]] = {}
                         res_scores[p[0]][p[1]] = (y, t)
+			qid2ylist.setdefault(p[0], [])
+			qid2ylist[p[0]].append(y)
+			qid2gtlist.setdefault(p[0], [])
+			qid2gtlist[p[0]].append(t)
 
                 num_valid += len(list_counts) - 1
             else:
@@ -344,6 +351,28 @@ def predict(config, data_root):
                     res_scores[p[0]][p[1]] = (y[1], t[1])
                 num_valid += 1
         generator.reset()
+	print(num_valid)
+	fout_debug = open("../MatchZoo_data/result/java/eval_score.txt", "w")
+	for qid in qid2ylist.keys():
+		ylist = qid2ylist[qid]
+		gtlist = qid2gtlist[qid]
+		for i in range(0, len(ylist)):
+			ylist[i] -= 0.000001 * float(gtlist[i])
+		ydict = dict([(x, ylist[x]) for x in range(0, len(ylist))])
+		sortedylist = sorted(ylist, reverse=True)
+		sortedydict = sorted(ydict.items(), key = lambda x:x[1], reverse=True)
+		sortedgtlist = []
+		for i in range(0, len(sortedydict)):
+			yidx = sortedydict[i][0]
+			gt = gtlist[yidx]
+			sortedgtlist.append(gt)
+		evalscore = eval_score(gtlist, ylist, "ndcg@100", eval_func)
+		avgscore += eval_score(gtlist, ylist, "ndcg@100", eval_func)
+		if qid == "T1221512":
+			for i in range(0, len(ylist)):
+				fout_debug.write(str(sortedgtlist[i]) + "\t" + str(sortedylist[i]) + "\n")	
+	print(avgscore / len(qid2ylist)), len(qid2ylist)	
+	fout_debug.close()
 
         if tag in output_conf:
             if output_conf[tag]['save_format'] == 'TREC':

@@ -47,23 +47,29 @@ def ndcg(labellist, topK):
 
 def load_qid2result(lang, component):
 	fin = open("../MatchZoo_data/result/" + lang + "/dssm." + component + ".txt", "r")
-	conc2score = {}
-	conc2gt = {}
+	qid2qidlist = {}
+	qid2gtlist = {}
+	qid2qid2pred = {}
+	qid2qid2gt = {}
 	for line in fin:
 		tokens = line.strip("\n").split("\t")
-		id1 = tokens[0]
-		id2 = tokens[2]
+		qid1 = tokens[0]
+		qid2 = tokens[2][1:]
 		score = float(tokens[4])
 		gt = tokens[6]
-		conc_id = id1 + "_" + id2
-		conc2score[conc_id] = score
-		conc2gt[conc_id] = gt
-	return conc2score, conc2gt
+		qid2qidlist.setdefault(qid1, [])
+		qid2qidlist[qid1].append(score)
+		qid2gtlist.setdefault(qid1, [])
+		qid2gtlist[qid1].append(gt)
+		qid2qid2pred.setdefault(qid1, {})
+		qid2qid2pred[qid1][qid2] = score
+		qid2qid2gt.setdefault(qid1, {})
+		qid2qid2gt[qid1][qid2] = gt
+	return qid2qidlist, qid2gtlist, qid2qid2pred, qid2qid2gt
 
 def load_qid_cosidf(lang):
 	testset = set()
 	fin = open("../MatchZoo_data/stackOF/data_" + lang + "/" + lang + "_test_qid.txt", "r")
-
 	for line in fin:
 		testset.add(line.strip("\n"))
 	fin = open("../MatchZoo_data/stackOF/data_" + lang + "/" + lang + "_cosidf.txt", "r")
@@ -124,6 +130,11 @@ def compare_score_gt(qid2gtlist, qid2gtlist_2, qid2scorelist, metric):
 	scorecount = 0
 	for qid in qid2gtlist.keys():
 		gtlist = qid2gtlist[qid]
+		gtlist_2 = qid2gtlist_2[qid]
+		for i in range(0, len(gtlist)):
+			gt1 = gtlist[i]
+			gt2 = gtlist_2[i]
+			assert gt1 == gt2
 		scorelist = qid2scorelist[qid]
 		thisscore = eval_score(gtlist, scorelist, metric)
 		totalscore += thisscore
@@ -135,16 +146,51 @@ def main(argv):
 	qid2y_pred = {}
 	lang = sys.argv[1]
 	metric = sys.argv[2]
-	components = ["title"]
-	coeffs = [1.0]
-	qid2qid2list, qid2gtlist = load_qid_cosidf(lang)
+	components = ["title", "question", "answer"]
+	coeffs = [1.0, 0.25, 0.25]
+	fout_debug = open("../MatchZoo_data/result/java/eval_score_2.txt", "w")
+	qid2qid2sum = {}
+	for i in range(0, 3):
+		component = components[i]
+		coeff = coeffs[i]
+		_, _, qid2qid2pred, qid2qid2gt = load_qid2result(lang, component)
+		for qid1 in qid2qid2pred.keys():
+			for qid2 in qid2qid2pred[qid1].keys():
+				qid2qid2sum.setdefault(qid1, {})
+				qid2qid2sum[qid1].setdefault(qid2, 0)
+				try:
+					qid2qid2sum[qid1][qid2] += coeff * qid2qid2pred[qid1][qid2]
+				except KeyError:
+					import pdb
+					pdb.set_trace()
+					print qid1, qid2, component
+					sys.exit(1)
+	print(compute_score_final(qid2qid2sum, qid2qid2gt, metric))
+	#for component in components:
+	#	qid2qidlist, qid2gtlist = load_qid2result(lang, component)
+	#	print(len(qid2qidlist))
+	#	avgscore = 0.0
+	#	scorecount = 0
+
+def compute_score_final(qid2qid2pred, qid2qid2gt, metric):
 	avgscore = 0
-	for component in components:
-		idmap1, idmap2 = load_idmap(lang, component)
-		conc2score, conc2gts = load_qid2result(lang, component)
-		qid2scorelist, qid2gtlist_2 = get_component_score(idmap1, idmap2, qid2qid2list, conc2score, conc2gts)	
-		avgscore = compare_score_gt(qid2gtlist, qid2gtlist_2, qid2scorelist, metric)
-	print(avgscore)
+	scorecount = 0
+	for qid1 in qid2qid2pred.keys():
+		qid2pred = qid2qid2pred[qid1]
+		qid2gt = qid2qid2gt[qid1]
+		ylist = []
+		gtlist = []
+		for qid2 in qid2pred.keys():
+			gtval = float(qid2gt[qid2])
+			yval = float(qid2pred[qid2]) - gtval * 0.000001
+			ylist.append(yval)
+			gtlist.append(qid2gt[qid2])
+		evalscore = eval_score(gtlist, ylist, metric)
+		avgscore += evalscore
+		scorecount += 1
+	avgscore /= scorecount	
+	return avgscore
+#	print(avgscore), scorecount
 	
 if __name__=='__main__':
 	main(sys.argv)	

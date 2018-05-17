@@ -167,16 +167,13 @@ class Preparation(object):
             label = tokens[3]
             t1 = qid2title[qid1]
             t2 = qid2component[qid2]
-            id1 = self.get_text_id(hashid, t1, 'T')
-            id2 = self.get_text_id(hashid, t2, hashtagprefix)
+            id1 = "T" + qid1 #self.get_text_id(hashid, t1, 'T')
+            id2 = hashtagprefix + qid2 #self.get_text_id(hashid, t2, hashtagprefix)
             qs.add(qid1)
             qs.add(qid2)
             corpus[id1] = t1
             corpus[id2] = t2
             rels.append((label, id1, id2))
-            if qid1 == "28337117" and id1 == "T17752":
-               import pdb
-               pdb.set_trace()
             if qid1 in idMap1:
                 assert idMap1[qid1] == id1
             else:
