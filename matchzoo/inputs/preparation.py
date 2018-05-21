@@ -128,7 +128,7 @@ class Preparation(object):
         idMap1 = {}
         idMap2 = {}
         qs = set()
-        f_corpus = codecs.open(srcdir + lang + "_qid2all.nostop.txt", "r")
+        f_corpus = codecs.open(srcdir + lang + "_qid2all.txt", "r")
         qid2component= {}
         qid2title = {}
         if component == "title":

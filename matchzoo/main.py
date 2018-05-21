@@ -37,7 +37,6 @@ def load_model(config):
         model_config = config['model']['setting']
         model_config.update(config['inputs']['share'])
         sys.path.insert(0, config['model']['model_path'])
-
         model = import_object(config['model']['model_py'], model_config)
         mo = model.build()
     return mo
@@ -55,8 +54,9 @@ def train(config, data_root):
     display_interval = int(global_conf['display_interval'])
     num_iters = int(global_conf['num_iters'])
     save_weights_iters = int(global_conf['save_weights_iters'])
-    component = config["component"]
-    lang = config["lang"]
+    if config["dataset"] != "WikiQA":
+    	component = config["component"]
+    	lang = config["lang"]
 
     # read input config
     input_conf = config['inputs']
@@ -362,23 +362,28 @@ def predict(config, data_root):
         sys.stdout.flush()
 
 def main(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--phase', default='train', help='Phase: Can be train or predict, the default value is train.')
-    parser.add_argument('--model_file', default='./models/arci.config', help='Model_file: MatchZoo model file for the chosen model.')
-    parser.add_argument("--data_root", default="/Data/work/xliu93/stackoverflow/MatchZoo_data/", help="Data file:")
-    args = parser.parse_args()
-    model_file =  args.model_file
-    data_root = args.data_root
-    with open(model_file, 'r') as f:
-        config = json.load(f)
-    phase = args.phase
-    if args.phase == 'train':
-        train(config, data_root)
-    elif args.phase == 'predict':
-        predict(config, data_root)
-    else:
-        print('Phase Error.', end='\n')
-    return
+
+    #with tf.device('/device:GPU:2'):
+    #  sess = tf.Session(config=tf.ConfigProto(
+    #  allow_soft_placement=True, log_device_placement=True))
+    #  with sess.as_default():
+         parser = argparse.ArgumentParser()
+         parser.add_argument('--phase', default='train', help='Phase: Can be train or predict, the default value is train.')
+         parser.add_argument('--model_file', default='./models/arci.config', help='Model_file: MatchZoo model file for the chosen model.')
+         parser.add_argument("--data_root", default="/Data/work/xliu93/stackoverflow/MatchZoo_data/", help="Data file:")
+         args = parser.parse_args()
+         model_file =  args.model_file
+         data_root = args.data_root
+         with open(model_file, 'r') as f:
+             config = json.load(f)
+         phase = args.phase
+         if args.phase == 'train':
+             train(config, data_root)
+         elif args.phase == 'predict':
+             predict(config, data_root)
+         else:
+             print('Phase Error.', end='\n')
+         return
 
 if __name__=='__main__':
     main(sys.argv)
