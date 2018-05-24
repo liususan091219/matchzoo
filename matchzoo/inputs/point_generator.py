@@ -10,12 +10,12 @@ from layers import DynamicMaxPooling
 import scipy.sparse as sp
 
 class PointGenerator(object):
-    def __init__(self, config):
+    def __init__(self, data_root, config):
         self.__name = 'PointGenerator'
         self.config = config
         self.data1 = config['data1']
         self.data2 = config['data2']
-        rel_file = config['relation_file']
+        rel_file = data_root + config['relation_file']
         self.rel = read_relation(filename=rel_file)
         self.batch_size = config['batch_size']
         self.data1_maxlen = config['text1_maxlen']
@@ -87,7 +87,7 @@ class PointGenerator(object):
         self.point = 0
 
 class Triletter_PointGenerator(object):
-    def __init__(self, config):
+    def __init__(self, data_root, config):
         self.__name = 'Triletter_PointGenerator'
         self.config = config
         self.data1 = config['data1']
@@ -96,7 +96,7 @@ class Triletter_PointGenerator(object):
         if self.dtype == 'cdssm':
             self.data1_maxlen = config['text1_maxlen']
             self.data2_maxlen = config['text2_maxlen']
-        rel_file = config['relation_file']
+        rel_file = data_root + config['relation_file']
         self.rel = read_relation(filename=rel_file)
         self.batch_size = config['batch_size']
         self.data1_maxlen = config['text1_maxlen']
@@ -111,7 +111,7 @@ class Triletter_PointGenerator(object):
         self.check_list = ['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'relation_file', 'batch_size', 'vocab_size', 'dtype', 'word_triletter_map_file']
         if not self.check():
             raise TypeError('[Triletter_PointGenerator] parameter check wrong.')
-        self.word_triletter_map = self.read_word_triletter_map(self.config['word_triletter_map_file'])
+        self.word_triletter_map = self.read_word_triletter_map(data_root, self.config['word_triletter_map_file'])
 
     def check(self):
         for e in self.check_list:
@@ -207,14 +207,14 @@ class Triletter_PointGenerator(object):
         self.point = 0
 
 class DRMM_PointGenerator(object):
-    def __init__(self, config):
+    def __init__(self, data_root, config):
         self.__name = 'DRMM_PointGenerator'
         self.config = config
         self.data1 = config['data1']
         self.data2 = config['data2']
         self.data1_maxlen = config['text1_maxlen']
         self.data2_maxlen = config['text2_maxlen']
-        rel_file = config['relation_file']
+        rel_file = data_root + config['relation_file']
         self.embed = config['embed']
         if 'bin_num' in config:
             self.hist_size = config['bin_num']
@@ -231,7 +231,7 @@ class DRMM_PointGenerator(object):
         self.check_list = ['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'relation_file', 'batch_size', 'vocab_size']
         self.use_hist_feats = False
         if 'hist_feats_file' in config:
-            hist_feats = read_features_without_id(config['hist_feats_file'])
+            hist_feats = read_features_without_id(data_root + config['hist_feats_file'])
             self.hist_feats = {}
             for idx, (label, d1, d2) in enumerate(self.rel):
                 self.hist_feats[(d1, d2)] = list(hist_feats[idx])

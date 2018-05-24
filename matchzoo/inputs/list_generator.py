@@ -10,12 +10,12 @@ from layers import DynamicMaxPooling
 import scipy.sparse as sp
 
 class ListBasicGenerator(object):
-    def __init__(self, config={}):
+    def __init__(self, data_root, config={}):
         self.__name = 'ListBasicGenerator'
         self.config = config
         self.batch_list = config['batch_list']
         if 'relation_file' in config:
-            self.rel = read_relation(filename=config['relation_file'])
+            self.rel = read_relation(filename= data_root + config['relation_file'])
             self.list_list = self.make_list(self.rel)
             self.num_list = len(self.list_list)
         self.check_list = []
@@ -51,8 +51,8 @@ class ListBasicGenerator(object):
     def get_all_data(self):
         pass
 class ListGenerator(ListBasicGenerator):
-    def __init__(self, config={}):
-        super(ListGenerator, self).__init__(config=config)
+    def __init__(self, data_root, config={}):
+        super(ListGenerator, self).__init__(data_root, config=config)
         self.__name = 'ListGenerator'
         self.data1 = config['data1']
         self.data2 = config['data2']
@@ -149,8 +149,8 @@ class ListGenerator(ListBasicGenerator):
         return x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls
 
 class Triletter_ListGenerator(ListBasicGenerator):
-    def __init__(self, config={}):
-        super(Triletter_ListGenerator, self).__init__(config=config)
+    def __init__(self, data_root, config={}):
+        super(Triletter_ListGenerator, self).__init__(data_root, config=config)
         self.__name = 'Triletter_ListGenerator'
         self.data1 = config['data1']
         self.data2 = config['data2']
@@ -163,7 +163,7 @@ class Triletter_ListGenerator(ListBasicGenerator):
         self.check_list.extend(['data1', 'data2', 'dtype', 'vocab_size', 'word_triletter_map_file'])
         if not self.check():
             raise TypeError('[Triletter_ListGenerator] parameter check wrong.')
-        self.word_triletter_map = self.read_word_triletter_map(self.config['word_triletter_map_file'])
+        self.word_triletter_map = self.read_word_triletter_map(data_root + self.config['word_triletter_map_file'])
         print('[Triletter_ListGenerator] init done', end='\n')
 
     def read_word_triletter_map(self, wt_map_file):
@@ -287,8 +287,8 @@ class Triletter_ListGenerator(ListBasicGenerator):
         return x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls
 
 class DRMM_ListGenerator(ListBasicGenerator):
-    def __init__(self, config={}):
-        super(DRMM_ListGenerator, self).__init__(config=config)
+    def __init__(self, data_root, config={}):
+        super(DRMM_ListGenerator, self).__init__(data_root, config=config)
         self.data1 = config['data1']
         self.data2 = config['data2']
         self.data1_maxlen = config['text1_maxlen']
@@ -302,7 +302,7 @@ class DRMM_ListGenerator(ListBasicGenerator):
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'embed'])
         self.use_hist_feats = False
         if 'hist_feats_file' in config:
-            hist_feats = read_features_without_id(config['hist_feats_file'])
+            hist_feats = read_features_without_id(data_root + config['hist_feats_file'])
             self.hist_feats = {}
             for idx, (label, d1, d2) in enumerate(self.rel):
                 self.hist_feats[(d1, d2)] = hist_feats[idx]
@@ -414,8 +414,8 @@ class DRMM_ListGenerator(ListBasicGenerator):
         return x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls
 
 class ListGenerator_Feats(ListBasicGenerator):
-    def __init__(self, config={}):
-        super(ListGenerator_Feats, self).__init__(config=config)
+    def __init__(self, data_root, config={}):
+        super(ListGenerator_Feats, self).__init__(data_root, config=config)
         self.__name = 'ListGenerator'
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'pair_feat_size', 'pair_feat_file', 'query_feat_size', 'query_feat_file'])
         if not self.check():
@@ -429,7 +429,7 @@ class ListGenerator_Feats(ListBasicGenerator):
         self.pair_feat_size = config['pair_feat_size']
         self.query_feat_size = config['query_feat_size']
         pair_feats = read_features_without_id(config['pair_feat_file'])
-        self.query_feats =  read_features_with_id(config['query_feat_file'])
+        self.query_feats =  read_features_with_id(data_root + config['query_feat_file'])
         self.pair_feats = {}
         for idx, (label, d1, d2) in enumerate(self.rel):
             self.pair_feats[(d1, d2)] = pair_feats[idx]

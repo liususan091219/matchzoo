@@ -10,10 +10,10 @@ from layers import DynamicMaxPooling
 import scipy.sparse as sp
 
 class PairBasicGenerator(object):
-    def __init__(self, config):
+    def __init__(self, data_root, config):
         self.__name = 'PairBasicGenerator'
         self.config = config
-        rel_file = config['relation_file']
+        rel_file = data_root + config['relation_file']
         self.rel = read_relation(filename=rel_file)
         self.batch_size = config['batch_size']
         self.check_list = ['relation_file', 'batch_size']
@@ -95,8 +95,8 @@ class PairBasicGenerator(object):
         self.point = 0
 
 class PairGenerator(PairBasicGenerator):
-    def __init__(self, config):
-        super(PairGenerator, self).__init__(config=config)
+    def __init__(self, data_root, config):
+        super(PairGenerator, self).__init__(data_root, config=config)
         self.__name = 'PairGenerator'
         self.config = config
         self.data1 = config['data1']
@@ -170,8 +170,8 @@ class PairGenerator(PairBasicGenerator):
                 yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
 
 class Triletter_PairGenerator(PairBasicGenerator):
-    def __init__(self, config):
-        super(Triletter_PairGenerator, self).__init__(config=config)
+    def __init__(self, data_root, config):
+        super(Triletter_PairGenerator, self).__init__(data_root, config=config)
         self.__name = 'Triletter_PairGenerator'
         self.data1 = config['data1']
         self.data2 = config['data2']
@@ -186,7 +186,7 @@ class Triletter_PairGenerator(PairBasicGenerator):
             self.batch_iter = self.get_batch_iter()
         if not self.check():
             raise TypeError('[Triletter_PairGenerator] parameter check wrong.')
-        self.word_triletter_map = self.read_word_triletter_map(self.config['word_triletter_map_file'])
+        self.word_triletter_map = self.read_word_triletter_map(data_root + self.config['word_triletter_map_file'])
         print('[Triletter_PairGenerator] init done', end='\n')
 
     def read_word_triletter_map(self, wt_map_file):
@@ -284,8 +284,8 @@ class Triletter_PairGenerator(PairBasicGenerator):
             yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
 
 class DRMM_PairGenerator(PairBasicGenerator):
-    def __init__(self, config):
-        super(DRMM_PairGenerator, self).__init__(config=config)
+    def __init__(self, data_root, config):
+        super(DRMM_PairGenerator, self).__init__(data_root, config=config)
         self.__name = 'DRMM_PairGenerator'
         self.data1 = config['data1']
         self.data2 = config['data2']
@@ -300,7 +300,7 @@ class DRMM_PairGenerator(PairBasicGenerator):
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'embed'])
         self.use_hist_feats = False
         if 'hist_feats_file' in config:
-            hist_feats = read_features_without_id(config['hist_feats_file'])
+            hist_feats = read_features_without_id(data_root + config['hist_feats_file'])
             self.hist_feats = {}
             for idx, (label, d1, d2) in enumerate(self.rel):
                 self.hist_feats[(d1, d2)] = hist_feats[idx]
@@ -395,8 +395,8 @@ class DRMM_PairGenerator(PairBasicGenerator):
             yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
 
 class PairGenerator_Feats(PairBasicGenerator):
-    def __init__(self, config):
-        super(PairGenerator_Feats, self).__init__(config=config)
+    def __init__(self, data_root, config):
+        super(PairGenerator_Feats, self).__init__(data_root, config=config)
         self.__name = 'PairGenerator'
         self.config = config
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'pair_feat_size', 'pair_feat_file', 'query_feat_size', 'query_feat_file'])

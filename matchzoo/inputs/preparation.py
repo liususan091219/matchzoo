@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
-
 from __future__ import print_function
+
 import sys
 import os
+import codecs
 import numpy as np
 import hashlib
 import random
@@ -39,13 +39,44 @@ class Preparation(object):
         else:
             return subs[0], subs[1], subs[2]
 
+    def parse_line_for_quora(self, line, delimiter='","'):
+        subs = line.split(delimiter)
+        #print('subs: ', len(subs))
+        # if subs[1]=="qid1":
+        #     return
+        if 6 != len(subs):
+            # print( "line__not satisfied",line)
+            # raise ValueError('format of data file wrong, should be \'label,text1,text2\'.')
+            return 0, 0, 0, 0, 0
+        else:
+            return subs[1], subs[2], subs[3], subs[4], subs[5][0]
+
+    def run_with_one_corpus_for_quora(self, file_path):
+        # hashid = {}
+        corpus = {}
+        rels = []
+        f = codecs.open(file_path, 'r', encoding='utf8')
+        next(f)
+        for line in f:
+            # print("", i)
+            # print("", i)
+            # line = line.decode('utf8')
+            line = line.strip()
+            qid1, qid2, q1, q2, label = self.parse_line_for_quora(line, "\t")
+            if q1 != 0:
+                corpus[qid1] = q1
+                corpus[qid2] = q2
+                rels.append((label, qid1, qid2))
+        f.close()
+        return corpus, rels
+
     def run_with_one_corpus(self, file_path):
         hashid = {}
         corpus = {}
         rels = []
-        f = open(file_path, 'r')
+        f = codecs.open(file_path, 'r', encoding='utf8')
         for line in f:
-            line = line.decode('utf8')
+            line = line
             line = line.strip()
             label, t1, t2 = self.parse_line(line)
             id1 = self.get_text_id(hashid, t1, 'T')
@@ -62,9 +93,9 @@ class Preparation(object):
         corpus_q = {}
         corpus_d = {}
         rels = []
-        f = open(file_path, 'r')
+        f = codecs.open(file_path, 'r', encoding='utf8')
         for line in f:
-            line = line.decode('utf8')
+            line = line
             line = line.strip()
             label, t1, t2 = self.parse_line(line)
             id1 = self.get_text_id(hashid_q, t1, 'Q')
@@ -74,6 +105,86 @@ class Preparation(object):
             rels.append((label, id1, id2))
         f.close()
         return corpus_q, corpus_d, rels
+
+    def run_with_separate(self, srcdir, train_file, valid_file, test_file, lang, component):
+        qid2fold = {}
+        for file_path in list([train_file, valid_file, test_file]):
+            f = codecs.open(file_path, 'r', encoding='utf8')
+            if file_path == train_file:
+                fold = "train"
+            elif file_path == valid_file:
+                fold = "valid"
+            else:
+                fold = "test"
+            for line in f:
+                line = line
+                line = line.strip()
+                qid2fold[line] = fold
+        hashid = {}
+        corpus = {}
+        train_rels = []
+        valid_rels = []
+        test_rels = []
+        idMap1 = {}
+        idMap2 = {}
+        qs = set()
+        f_corpus = codecs.open(srcdir + lang + "_qid2all.txt", "r")
+        qid2component= {}
+        qid2title = {}
+        if component == "title":
+           hashtagprefix = "T"
+        elif component == "question":
+           hashtagprefix = "Q"
+        else:
+           hashtagprefix = "A"
+        for line in f_corpus:
+            tokens = line.strip("\n").split("\t")
+            qid = tokens[0]
+            title = tokens[1]
+            question = tokens[2]
+            answer = tokens[3]
+            qid2title[qid] = title 
+            if component == "title":
+               qid2component[qid] = title
+            elif component == "question":
+               qid2component[qid] = question
+            else:
+               assert component == "answer"
+               qid2component[qid] = answer
+        f_rel = codecs.open(srcdir + lang + "_cosidf.txt", "r")
+        f_rel.readline()
+        for line in f_rel:	
+            tokens = line.strip("\n").split("\t")
+            qid1 = tokens[0]
+            qid2 = tokens[1]
+            fold1 = qid2fold[qid1]
+            if fold1 == "train":
+                rels = train_rels
+            elif fold1 == "valid":
+                rels = valid_rels
+            elif fold1 == "test":
+                rels = test_rels
+            label = tokens[3]
+            t1 = qid2title[qid1]
+            t2 = qid2component[qid2]
+            id1 = "T" + qid1 #self.get_text_id(hashid, t1, 'T')
+            id2 = hashtagprefix + qid2 #self.get_text_id(hashid, t2, hashtagprefix)
+            qs.add(qid1)
+            qs.add(qid2)
+            corpus[id1] = t1
+            corpus[id2] = t2
+            rels.append((label, id1, id2))
+            if qid1 in idMap1:
+                assert idMap1[qid1] == id1
+            else:
+                idMap1[qid1] = id1
+            if qid2 in idMap2:
+                assert idMap2[qid2] == id2
+            else:
+                idMap2[qid2] = id2
+        f_corpus.close()
+        f_rel.close()
+        return corpus, train_rels, valid_rels, test_rels, idMap1, idMap2
 
     def run_with_train_valid_test_corpus(self, train_file, valid_file, test_file):
         '''
@@ -104,9 +215,9 @@ class Preparation(object):
                 rels = rels_valid
             if file_path == test_file:
                 rels = rels_test
-            f = open(file_path, 'r')
+            f = codecs.open(file_path, 'r', encoding='utf8')
             for line in f:
-                line = line.decode('utf8')
+                line = line
                 line = line.strip()
                 label, t1, t2 = self.parse_line(line)
                 id2 = self.get_text_id(hashid, t2, 'D')
@@ -127,9 +238,9 @@ class Preparation(object):
 
     @staticmethod
     def save_corpus(file_path, corpus):
-        f = open(file_path, 'w')
+        f = codecs.open(file_path, 'w', encoding='utf8')
         for qid, text in corpus.items():
-            f.write('%s %s\n' % (qid, text.encode('utf8')))
+            f.write('%s %s\n' % (qid, text))
         f.close()
 
     @staticmethod
@@ -147,11 +258,11 @@ class Preparation(object):
 
     @staticmethod
     def check_filter_query_with_dup_doc(input_file):
-        ''' Filter queries with duplicated doc ids in the relation files
+        """ Filter queries with duplicated doc ids in the relation files
         :param input_file: input file, which could be the relation file for train/valid/test data
                            The format is "label qid did"
         :return:
-        '''
+        """
         with open(input_file) as f_in, open(input_file + '.fd', 'w') as f_out:
             cur_qid = 'init'
             cache_did_set = set()
@@ -171,10 +282,8 @@ class Preparation(object):
                     if not found_dup_doc:
                         f_out.write(''.join(cache_q_lines))
                     else:
-                        print
-                        'found qid with duplicated doc id/text: ', ''.join(cache_q_lines)
-                        print
-                        'filtered... continue'
+                        print('found qid with duplicated doc id/text: ', ''.join(cache_q_lines))
+                        print('filtered... continue')
                     cache_q_lines = []
                     cache_q_lines.append(l)
                     found_dup_doc = False
@@ -183,13 +292,12 @@ class Preparation(object):
                     cache_did_set.add(tokens[2])
             # the last query
             # print len(cache_q_lines), len(cache_did_set)
-            if (len(cache_q_lines) != 0 and len(cache_q_lines) == len(cache_did_set)):
+            if len(cache_q_lines) != 0 and len(cache_q_lines) == len(cache_did_set):
                 f_out.write(''.join(cache_q_lines))
-                print
-                'write the last query... done: ', ''.join(cache_q_lines)
+                print('write the last query... done: ', ''.join(cache_q_lines))
 
     @staticmethod
-    def split_train_valid_test(relations, ratio=[0.8, 0.1, 0.1]):
+    def split_train_valid_test(relations, ratio=(0.8, 0.1, 0.1)):
         random.shuffle(relations)
         total_rel = len(relations)
         num_train = int(total_rel * ratio[0])
@@ -201,7 +309,7 @@ class Preparation(object):
         return rel_train, rel_valid, rel_test
 
     @staticmethod
-    def split_train_valid_test_for_ranking(relations, ratio=[0.8, 0.1, 0.1]):
+    def split_train_valid_test_for_ranking(relations, ratio=(0.8, 0.1, 0.1)):
         qid_group = set()
         for r, q, d in relations:
             qid_group.add(q)
@@ -240,7 +348,7 @@ if __name__ == '__main__':
     print('total relations : %d ...' % (len(rels)))
     prepare.save_corpus(basedir + 'corpus.txt', corpus)
 
-    rel_train, rel_valid, rel_test = prepare.split_train_valid_test(rels, [0.8, 0.1, 0.1])
+    rel_train, rel_valid, rel_test = prepare.split_train_valid_test(rels, (0.8, 0.1, 0.1))
     prepare.save_relation(basedir + 'relation_train.txt', rel_train)
     prepare.save_relation(basedir + 'relation_valid.txt', rel_valid)
     prepare.save_relation(basedir + 'relation_test.txt', rel_test)
