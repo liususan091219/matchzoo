@@ -91,7 +91,7 @@ def load_model(config):
     return mo
 
 
-def train(config, data_root):
+def train(config, data_root, log_file):
 
     print(json.dumps(config, indent=2), end='\n')
     # read basic config
@@ -101,6 +101,7 @@ def train(config, data_root):
     display_interval = int(global_conf['display_interval'])
     num_iters = int(global_conf['num_iters'])
     save_weights_iters = int(global_conf['save_weights_iters'])
+    fout_log = open(data_root + log_file, "w")
 
     # read input config
     input_conf = config['inputs']
@@ -224,9 +225,11 @@ def train(config, data_root):
                     num_valid += 1
             generator.reset()
             print('Iter:%d\t%s' % (i_e, '\t'.join(['%s=%f'%(k,v/num_valid) for k, v in res.items()])), end='\n')
+            fout_log.write('Iter:%d\t%s' % (i_e, '\t'.join(['%s=%f'%(k,v/num_valid) for k, v in res.items()])) + "\n")
             sys.stdout.flush()
         if (i_e+1) % save_weights_iters == 0:
             model.save_weights(weights_file % (i_e+1))
+    fout_log.close()
 
 def predict(config):
     ######## Read input config ########
@@ -365,14 +368,16 @@ def main(argv):
     parser.add_argument('--phase', default='train', help='Phase: Can be train or predict, the default value is train.')
     parser.add_argument('--model_file', default='./models/arci.config', help='Model_file: MatchZoo model file for the chosen model.')
     parser.add_argument("--data_root", default="/Data/work/xliu93/stackoverflow/MatchZoo_data/", help="data root")
+    parser.add_argument("--log_file", default="", help = "log file")
     args = parser.parse_args()
     model_file =  args.model_file
+    log_file = args.log_file
     data_root = args.data_root
     with open(model_file, 'r') as f:
         config = json.load(f)
     phase = args.phase
     if args.phase == 'train':
-        train(config, data_root)
+        train(config, data_root, log_file)
     elif args.phase == 'predict':
         predict(config)
     else:
