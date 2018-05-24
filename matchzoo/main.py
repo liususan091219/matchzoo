@@ -369,13 +369,12 @@ def main(argv):
     parser.add_argument('--phase', default='train', help='Phase: Can be train or predict, the default value is train.')
     parser.add_argument('--model_file', default='./models/arci.config', help='Model_file: MatchZoo model file for the chosen model.')
     parser.add_argument("--data_root", default="/Data/work/xliu93/stackoverflow/MatchZoo_data/", help="data root")
-    parser.add_argument("--log_file", default="", help = "log file")
     args = parser.parse_args()
     model_file =  args.model_file
-    log_file = args.log_file
     data_root = args.data_root
     with open(model_file, 'r') as f:
         config = json.load(f)
+    log_file = config["out_file"]
     phase = args.phase
     if args.phase == 'train':
         train(config, data_root, log_file)
