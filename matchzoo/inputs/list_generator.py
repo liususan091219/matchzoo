@@ -15,7 +15,11 @@ class ListBasicGenerator(object):
         self.config = config
         self.batch_list = config['batch_list']
         if 'relation_file' in config:
+<<<<<<< HEAD
             self.rel = read_relation(filename= data_root + config['relation_file'])
+=======
+            self.rel = read_relation(filename=data_root +config['relation_file'])
+>>>>>>> b2cc427e75f276a74dae5fcf2ec02ec52313f7d8
             self.list_list = self.make_list(self.rel)
             self.num_list = len(self.list_list)
         self.check_list = []
@@ -503,7 +507,7 @@ class ListGenerator_Feats(ListBasicGenerator):
             j = 0
             for pt in currbatch:
                 d1, d2_list = pt[0], pt[1]
-                d1 = list(self.data1[d1])
+                d1_cont = list(self.data1[d1])
                 list_count.append(list_count[-1] + len(d2_list))
                 d1_len = min(self.data1_maxlen, len(d1_cont))
                 for l, d2 in d2_list:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-
+from __future__ import print_function
 import os
 import sys
 sys.path.append('../../matchzoo/utils/')
@@ -10,8 +10,15 @@ from rank_io import *
 
 if __name__ == '__main__':
     hist_size = int(sys.argv[1])
+<<<<<<< HEAD:data/stackOF/gen_hist4drmm.py
     srcdir = sys.argv[2] 
     embedfile = srcdir + 'embed_glove_d300_norm'
+=======
+    wikiqa_path = sys.argv[2]
+    srcdir = wikiqa_path 
+    embed_dir = "/Data/work/xliu93/stackoverflow/MatchZoo_data/glove/glove_general/"
+    embedfile = embed_dir + 'embed_glove_d300_norm'
+>>>>>>> b2cc427e75f276a74dae5fcf2ec02ec52313f7d8:data/WikiQA/gen_hist4drmm.py
     corpusfile = srcdir + 'corpus_preprocessed.txt'
 
     relfiles = [ srcdir + 'relation_train.txt',
@@ -26,7 +33,7 @@ if __name__ == '__main__':
     embed_dict = read_embedding(filename = embedfile)
     print('read embedding finished ...')
     _PAD_ = len(embed_dict)
-    embed_size = len(embed_dict[embed_dict.keys()[0]])
+    embed_size = len(list(embed_dict.values())[0])
     embed_dict[_PAD_] = np.zeros((embed_size, ), dtype=np.float32)
     embed = np.float32(np.random.uniform(-0.2, 0.2, [_PAD_+1, embed_size]))
     embed = convert_embed_2_numpy(embed_dict, embed = embed)
@@ -48,4 +55,4 @@ if __name__ == '__main__':
             fout.write(' '.join(map(str, curr_hist)))
             fout.write('\n')
         fout.close()
-    print 'generate histogram finished ...'
+    print('generate histogram finished ...')

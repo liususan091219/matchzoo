@@ -68,7 +68,7 @@ class DRMM(BasicModel):
         q_w = Reshape((self.config['text1_maxlen'],))(q_w)
         show_layer_info('Reshape', q_w)
 
-        out_ = Dot( axes= [1, 1])([z, q_w])
+        out_ = Dot( axes= [1, 1], normalize=True)([z, q_w])
         if self.config['target_mode'] == 'classification':
             out_ = Dense(2, activation='softmax')(out_)
         show_layer_info('Dense', out_)
