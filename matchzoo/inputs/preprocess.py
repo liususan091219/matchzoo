@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 
+
+from __future__ import print_function
+from nltk.tokenize import word_tokenize
 import jieba
 import sys
-import six
-import codecs
 import numpy as np
-from tqdm import tqdm
-from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords as nltk_stopwords
 from nltk.stem import SnowballStemmer
+from tqdm import tqdm
 
 sys.path.append('../inputs')
 sys.path.append('../utils')
 from preparation import *
 from rank_io import *
-
 
 class Preprocess(object):
 
@@ -32,11 +30,11 @@ class Preprocess(object):
                  ):
         # set default configuration
         self._word_seg_config = { 'enable': True, 'lang': 'en' }
-        self._doc_filter_config = { 'enable': True, 'min_len': 0, 'max_len': six.MAXSIZE }
+        self._doc_filter_config = { 'enable': True, 'min_len': 0, 'max_len': sys.maxint }
         self._word_stem_config = { 'enable': True }
         self._word_lower_config = { 'enable': True }
         self._word_filter_config = { 'enable': True, 'stop_words': nltk_stopwords.words('english'),
-                                     'min_freq': 0, 'max_freq': 1000000, 'words_useless': None }
+                                     'min_freq': 1, 'max_freq': sys.maxint, 'words_useless': None }
         self._word_index_config = { 'word_dict': None }
 
         self._word_seg_config.update(word_seg_config)
@@ -92,8 +90,9 @@ class Preprocess(object):
     def load(file_path):
         dids = list()
         docs = list()
-        f = codecs.open(file_path, 'r', encoding='utf8')
+        f = open(file_path, 'r')
         for line in tqdm(f):
+            line = line.decode('utf8')
             line = line.strip()
             if '' != line:
                 did, doc = Preprocess.parse(line)
@@ -193,15 +192,15 @@ class Preprocess(object):
 
     @staticmethod
     def save_lines(file_path, lines):
-        f = codecs.open(file_path, 'w', encoding='utf8')
+        f = open(file_path, 'w')
         for line in lines:
-            line = line
+            line = line.encode('utf8')
             f.write(line + "\n")
         f.close()
 
     @staticmethod
     def load_lines(file_path):
-        f = codecs.open(file_path, 'r', encoding='utf8')
+        f = open(file_path, 'r')
         lines = f.readlines()
         f.close()
         return lines
@@ -212,7 +211,7 @@ class Preprocess(object):
             dic = sorted(dic.items(), key=lambda d:d[1], reverse=False)
             lines = ['%s %s' % (k, v) for k, v in dic]
         else:
-            lines = ['%s %s' % (k, v) for k, v in dic.items()]
+            lines = ['%s %s' % (k, v) for k, v in dic.iteritems()]
         Preprocess.save_lines(file_path, lines)
 
     @staticmethod

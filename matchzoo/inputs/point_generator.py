@@ -15,11 +15,7 @@ class PointGenerator(object):
         self.config = config
         self.data1 = config['data1']
         self.data2 = config['data2']
-<<<<<<< HEAD
         rel_file = data_root + config['relation_file']
-=======
-        rel_file = data_root +config['relation_file']
->>>>>>> b2cc427e75f276a74dae5fcf2ec02ec52313f7d8
         self.rel = read_relation(filename=rel_file)
         self.batch_size = config['batch_size']
         self.data1_maxlen = config['text1_maxlen']
@@ -41,26 +37,21 @@ class PointGenerator(object):
                 return False
         return True
 
-    def get_batch(self):
-        if self.point >= self.total_rel_num:
-            return None
-        curr_batch_size = self.batch_size
-        if (not self.is_train) and self.total_rel_num - self.point < self.batch_size:
-            curr_batch_size = self.total_rel_num - self.point
+    def get_batch(self, randomly=True):
         ID_pairs = []
-        X1 = np.zeros((curr_batch_size, self.data1_maxlen), dtype=np.int32)
-        X1_len = np.zeros((curr_batch_size,), dtype=np.int32)
-        X2 = np.zeros((curr_batch_size, self.data2_maxlen), dtype=np.int32)
-        X2_len = np.zeros((curr_batch_size,), dtype=np.int32)
+        X1 = np.zeros((self.batch_size, self.data1_maxlen), dtype=np.int32)
+        X1_len = np.zeros((self.batch_size,), dtype=np.int32)
+        X2 = np.zeros((self.batch_size, self.data2_maxlen), dtype=np.int32)
+        X2_len = np.zeros((self.batch_size,), dtype=np.int32)
         if self.target_mode == 'regression':
-            Y = np.zeros((curr_batch_size,), dtype=np.int32)
+            Y = np.zeros((self.batch_size,), dtype=np.int32)
         elif self.target_mode == 'classification':
-            Y = np.zeros((curr_batch_size, self.class_num), dtype=np.int32)
+            Y = np.zeros((self.batch_size, self.class_num), dtype=np.int32)
 
         X1[:] = self.fill_word
         X2[:] = self.fill_word
-        for i in range(curr_batch_size):
-            if self.is_train:
+        for i in range(self.batch_size):
+            if randomly:
                 label, d1, d2 = random.choice(self.rel)
             else:
                 label, d1, d2 = self.rel[self.point]
@@ -77,15 +68,20 @@ class PointGenerator(object):
         return X1, X1_len, X2, X2_len, Y, ID_pairs
 
     def get_batch_generator(self):
-        while True:
-            sample = self.get_batch()
-            if not sample:
-                break
-            X1, X1_len, X2, X2_len, Y, ID_pairs = sample
-            if self.config['use_dpool']:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID':ID_pairs}, Y)
-            else:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID':ID_pairs}, Y)
+        if self.is_train:
+            while True:
+                X1, X1_len, X2, X2_len, Y, ID_pairs = self.get_batch()
+                if self.config['use_dpool']:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen'])}, Y)
+                else:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
+        else:
+            while self.point + self.batch_size <= self.total_rel_num:
+                X1, X1_len, X2, X2_len, Y, ID_pairs = self.get_batch(randomly = False)
+                if self.config['use_dpool']:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID':ID_pairs}, Y)
+                else:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID':ID_pairs}, Y)
 
     def reset(self):
         self.point = 0
@@ -115,11 +111,7 @@ class Triletter_PointGenerator(object):
         self.check_list = ['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'relation_file', 'batch_size', 'vocab_size', 'dtype', 'word_triletter_map_file']
         if not self.check():
             raise TypeError('[Triletter_PointGenerator] parameter check wrong.')
-<<<<<<< HEAD
         self.word_triletter_map = self.read_word_triletter_map(data_root, self.config['word_triletter_map_file'])
-=======
-        self.word_triletter_map = self.read_word_triletter_map(data_root,self.config['word_triletter_map_file'])
->>>>>>> b2cc427e75f276a74dae5fcf2ec02ec52313f7d8
 
     def check(self):
         for e in self.check_list:
@@ -162,23 +154,18 @@ class Triletter_PointGenerator(object):
             nfeat[i,:rlen] = feats[i][:rlen]
         return nfeat
 
-    def get_batch(self):
-        if self.point >= self.total_rel_num:
-            return None
-        curr_batch_size = self.batch_size
-        if (not self.is_train) and self.total_rel_num - self.point < self.batch_size:
-            curr_batch_size = self.total_rel_num - self.point
+    def get_batch(self, randomly=True):
         ID_pairs = []
-        X1_len = np.zeros((curr_batch_size,), dtype=np.int32)
-        X2_len = np.zeros((curr_batch_size,), dtype=np.int32)
+        X1_len = np.zeros((self.batch_size,), dtype=np.int32)
+        X2_len = np.zeros((self.batch_size,), dtype=np.int32)
         if self.target_mode == 'regression':
-            Y = np.zeros((curr_batch_size,), dtype=np.int32)
+            Y = np.zeros((self.batch_size,), dtype=np.int32)
         elif self.target_mode == 'classification':
-            Y = np.zeros((curr_batch_size, self.class_num), dtype=np.int32)
+            Y = np.zeros((self.batch_size, self.class_num), dtype=np.int32)
 
         X1, X2 = [], []
-        for i in range(curr_batch_size):
-            if self.is_train:
+        for i in range(self.batch_size):
+            if randomly:
                 label, d1, d2 = random.choice(self.rel)
             else:
                 label, d1, d2 = self.rel[self.point]
@@ -201,15 +188,20 @@ class Triletter_PointGenerator(object):
 
 
     def get_batch_generator(self):
-        while True:
-            sample = self.get_batch()
-            if not sample:
-                break
-            X1, X1_len, X2, X2_len, Y, ID_pairs = sample
-            if self.config['use_dpool']:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID':ID_pairs}, Y)
-            else:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID':ID_pairs}, Y)
+        if self.is_train:
+            while True:
+                X1, X1_len, X2, X2_len, Y, ID_pairs = self.get_batch()
+                if self.config['use_dpool']:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen'])}, Y)
+                else:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
+        else:
+            while self.point + self.batch_size <= self.total_rel_num:
+                X1, X1_len, X2, X2_len, Y, ID_pairs = self.get_batch(randomly = False)
+                if self.config['use_dpool']:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID':ID_pairs}, Y)
+                else:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID':ID_pairs}, Y)
 
     def reset(self):
         self.point = 0
@@ -277,24 +269,19 @@ class DRMM_PointGenerator(object):
                 return False
         return True
 
-    def get_batch(self):
-        if self.point >= self.total_rel_num:
-            return None
-        curr_batch_size = self.batch_size
-        if (not self.is_train) and self.total_rel_num - self.point < self.batch_size:
-            curr_batch_size = self.total_rel_num - self.point
+    def get_batch(self, randomly=True):
         ID_pairs = []
-        X1 = np.zeros((curr_batch_size, self.data1_maxlen), dtype=np.int32)
-        X1_len = np.zeros((curr_batch_size,), dtype=np.int32)
-        X2 = np.zeros((curr_batch_size, self.data1_maxlen, self.hist_size), dtype=np.float32)
-        X2_len = np.zeros((curr_batch_size,), dtype=np.int32)
+        X1 = np.zeros((self.batch_size, self.data1_maxlen), dtype=np.int32)
+        X1_len = np.zeros((self.batch_size,), dtype=np.int32)
+        X2 = np.zeros((self.batch_size, self.data1_maxlen, self.hist_size), dtype=np.float32)
+        X2_len = np.zeros((self.batch_size,), dtype=np.int32)
         if self.target_mode == 'regression':
-            Y = np.zeros((curr_batch_size,), dtype=np.int32)
+            Y = np.zeros((self.batch_size,), dtype=np.int32)
         elif self.target_mode == 'classification':
-            Y = np.zeros((curr_batch_size, self.class_num), dtype=np.int32)
+            Y = np.zeros((self.batch_size, self.class_num), dtype=np.int32)
 
         X1[:] = self.fill_word
-        for i in range(curr_batch_size):
+        for i in range(self.batch_size):
             if randomly:
                 label, d1, d2 = random.choice(self.rel)
             else:
@@ -312,15 +299,20 @@ class DRMM_PointGenerator(object):
         return X1, X1_len, X2, X2_len, Y, ID_pairs
 
     def get_batch_generator(self):
-        while True:
-            sample = self.get_batch()
-            if not sample:
-                break
-            X1, X1_len, X2, X2_len, Y, ID_pairs = sample
-            if self.config['use_dpool']:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID':ID_pairs}, Y)
-            else:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID':ID_pairs}, Y)
+        if self.is_train:
+            while True:
+                X1, X1_len, X2, X2_len, Y, ID_pairs = self.get_batch()
+                if self.config['use_dpool']:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen'])}, Y)
+                else:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
+        else:
+            while self.point + self.batch_size <= self.total_rel_num:
+                X1, X1_len, X2, X2_len, Y, ID_pairs = self.get_batch(randomly = False)
+                if self.config['use_dpool']:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID':ID_pairs}, Y)
+                else:
+                    yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID':ID_pairs}, Y)
 
     def reset(self):
         self.point = 0

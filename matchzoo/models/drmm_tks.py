@@ -77,7 +77,7 @@ class DRMM_TKS(BasicModel):
         mm_reshape = Reshape((self.config['text1_maxlen'],))(mm_k_dropout)
         show_layer_info('Reshape', mm_reshape)
 
-        mean = Dot(axes=[1, 1], normalize = True)([mm_reshape, g])
+        mean = Dot(axes=[1, 1])([mm_reshape, g])
         show_layer_info('Dot', mean)
 
         if self.config['target_mode'] == 'classification':
