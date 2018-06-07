@@ -46,7 +46,7 @@ def ndcg(labellist, topK):
 	return dcg / idcg
 
 def load_qid2result(lang, component):
-	fin = open("../MatchZoo_data/result/" + lang + "/dssm." + component + ".txt", "r")
+	fin = open("../MatchZoo_data/result/" + lang + "/anmm." + component + ".txt", "r")
 	qid2qidlist = {}
 	qid2gtlist = {}
 	qid2qid2pred = {}

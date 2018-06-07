@@ -172,6 +172,9 @@ def train(config, data_root, log_file):
     ######### Load Model #########
     model = load_model(config)
 
+    writer = tf.summary.FileWriter(data_root + "logs/tmp")
+    writer.add_graph(sess.graph)
+
     loss = []
     for lobj in config['losses']:
         if lobj['object_name'] in mz_specialized_losses:
@@ -232,7 +235,7 @@ def train(config, data_root, log_file):
             model.save_weights(weights_file % (i_e+1))
     fout_log.close()
 
-def predict(config):
+def predict(config, data_root):
     ######## Read input config ########
 
     print(json.dumps(config, indent=2), end='\n')
@@ -284,7 +287,7 @@ def predict(config):
         conf['data1'] = dataset[data_root + conf['text1_corpus']]
         conf['data2'] = dataset[data_root + conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
-        predict_gen[tag] = generator(
+        predict_gen[tag] = generator(data_root,
                                     #data1 = dataset[conf['text1_corpus']],
                                     #data2 = dataset[conf['text2_corpus']],
                                      config = conf )
@@ -294,7 +297,7 @@ def predict(config):
 
     ######## Load Model ########
     global_conf = config["global"]
-    weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters'])
+    weights_file = str(data_root + global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters'])
 
     model = load_model(config)
     model.load_weights(weights_file)
@@ -349,13 +352,13 @@ def predict(config):
 
         if tag in output_conf:
             if output_conf[tag]['save_format'] == 'TREC':
-                with open(output_conf[tag]['save_path'], 'w') as f:
+                with open(data_root + output_conf[tag]['save_path'], 'w') as f:
                     for qid, dinfo in res_scores.items():
                         dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
                         for inum,(did, (score, gt)) in enumerate(dinfo):
                             f.write('%s\tQ0\t%s\t%d\t%f\t%s\t%s\n'%(qid, did, inum, score, config['net_name'], gt))
             elif output_conf[tag]['save_format'] == 'TEXTNET':
-                with open(output_conf[tag]['save_path'], 'w') as f:
+                with open(data_root + output_conf[tag]['save_path'], 'w') as f:
                     for qid, dinfo in res_scores.items():
                         dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
                         for inum,(did, (score, gt)) in enumerate(dinfo):
@@ -379,7 +382,7 @@ def main(argv):
     if args.phase == 'train':
         train(config, data_root, log_file)
     elif args.phase == 'predict':
-        predict(config)
+        predict(config, data_root)
     else:
         print('Phase Error.', end='\n')
     return

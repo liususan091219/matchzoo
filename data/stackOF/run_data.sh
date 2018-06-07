@@ -5,7 +5,7 @@ rootdir="$(dirname "$grandparentdir")"/MatchZoo_data/
 
 data_path=$rootdir/stackOF/$1_$2/
 code_path=$grandparentdir/data/stackOF/
-glove_dir=$rootdir/glove_backup/
+glove_dir=$rootdir/glove/
 
 # download the wiki-qa dataset
 
