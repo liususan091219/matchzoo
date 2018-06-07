@@ -110,7 +110,7 @@ def train(config, data_root, log_file):
 
     # collect embedding
     if 'embed_path' in share_input_conf:
-        embed_dict = read_embedding(filename=share_input_conf['embed_path'])
+        embed_dict = read_embedding(filename=data_root + share_input_conf['embed_path'])
         _PAD_ = share_input_conf['vocab_size'] - 1
         embed_dict[_PAD_] = np.zeros((share_input_conf['embed_size'], ), dtype=np.float32)
         embed = np.float32(np.random.uniform(-0.2, 0.2, [share_input_conf['vocab_size'], share_input_conf['embed_size']]))
@@ -241,7 +241,7 @@ def predict(config):
 
     # collect embedding
     if 'embed_path' in share_input_conf:
-        embed_dict = read_embedding(filename=share_input_conf['embed_path'])
+        embed_dict = read_embedding(filename=data_root + share_input_conf['embed_path'])
         _PAD_ = share_input_conf['vocab_size'] - 1
         embed_dict[_PAD_] = np.zeros((share_input_conf['embed_size'], ), dtype=np.float32)
         embed = np.float32(np.random.uniform(-0.02, 0.02, [share_input_conf['vocab_size'], share_input_conf['embed_size']]))

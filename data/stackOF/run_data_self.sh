@@ -3,7 +3,7 @@ parentdir="$(dirname "$currentdir")"
 grandparentdir="$(dirname "$parentdir")"
 rootdir="$(dirname "$grandparentdir")"/MatchZoo_data/
 
-data_path=$rootdir/stackOF/$1_$2/
+data_path=$rootdir/stackOF/$1_slf_$2/
 code_path=$grandparentdir/data/stackOF/
 glove_dir=$rootdir/glove_backup/
 
@@ -28,10 +28,11 @@ glove_dir=$rootdir/glove_backup/
 # generate the mz-datasets
 
 cd $code_path
-#python prepare_mz_data.py $1 $2 $rootdir
+#python prepare_mz_data_self.py $1 $2 $rootdir
 
 # generate word embedding
 
+#array=( 50 )
 array=( 200 )
 for i in "${array[@]}"
 do
@@ -53,8 +54,8 @@ cat ${data_path}word_stats.txt | cut -d ' ' -f 1,4 > ${data_path}embed.idf
 
 for i in "${array[@]}"
 do
-     python gen_hist4drmm.py 60 $data_path $i
-     python gen_binsum4anmm.py 20 $data_path $i # the default number of bin is 20
-done
+	python gen_hist4drmm.py 60 $data_path $i
+	python gen_binsum4anmm.py 20 $data_path $i # the default number of bin is 20
+done 
 
 echo "Done ..."

@@ -49,12 +49,12 @@ if __name__ == "__main__":
         rootdir = sys.argv[3]
 	prepare = Preparation()
 	srcdir = rootdir + "stackOF/data_" + lang + "/"
-	word_dstdir = rootdir + "stackOF/" + lang + "_" + component + "/"
+	word_dstdir = rootdir + "stackOF/" + lang + "_slf_" + component + "/"
 	if not os.path.exists(word_dstdir):
 		os.makedirs(word_dstdir)	
 	relation_dstdir = word_dstdir 
 	splitfiles = [srcdir + lang + "_train_qid.txt", srcdir + lang + "_valid_qid.txt", srcdir + lang + "_test_qid.txt"]
-	corpus, rel_train, rel_valid, rel_test, idMap1, idMap2 = prepare.run_with_separate(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang, component)
+	corpus, rel_train, rel_valid, rel_test, idMap1, idMap2 = prepare.run_with_separate_self(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang, component)
 	write_idMap(idMap1, idMap2, word_dstdir)
 	print('total corpus : %d ...' % (len(corpus)))
 	print('total relation-train : %d ...' % (len(rel_train)))
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 	prepare.save_relation(relation_dstdir + 'relation_test.txt', rel_test)
 	print('Preparation finished ...')
 	
-	preprocessor = Preprocess(word_stem_config={'enable': False}, word_filter_config={'min_freq': 0})
+	preprocessor = Preprocess()#word_stem_config={'enable': False}, word_filter_config={'min_freq': 0})
 	dids, docs = preprocessor.run(word_dstdir + 'corpus.txt')
 	preprocessor.save_word_dict(word_dstdir + 'word_dict.txt', True)
 	preprocessor.save_words_stats(word_dstdir + 'word_stats.txt', True)

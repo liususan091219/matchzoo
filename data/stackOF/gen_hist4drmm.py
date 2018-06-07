@@ -11,7 +11,8 @@ from rank_io import *
 if __name__ == '__main__':
     hist_size = int(sys.argv[1])
     srcdir = sys.argv[2] 
-    embedfile = srcdir + 'embed_glove_d300_norm'
+    embeddim = sys.argv[3]
+    embedfile = srcdir + 'embed_glove_d' + embeddim + '_norm'
     corpusfile = srcdir + 'corpus_preprocessed.txt'
 
     relfiles = [ srcdir + 'relation_train.txt',
