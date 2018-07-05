@@ -1,3 +1,6 @@
+#!/bin/bash
+# for preprocessing the data with self link
+
 currentdir=$PWD
 parentdir="$(dirname "$currentdir")"
 grandparentdir="$(dirname "$parentdir")"

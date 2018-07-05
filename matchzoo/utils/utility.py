@@ -4,6 +4,8 @@ import sys
 import traceback
 import resource
 
+def show_nn_info(layer_name, nn):
+    print("[kernel weight]: %s\t%s" % (layer_name, nn.kernel.shape))
 
 def show_layer_info(layer_name, layer_out):
     print('[layer]: %s\t[shape]: %s \n%s' % (layer_name,str(layer_out.get_shape().as_list()), show_memory_use()))

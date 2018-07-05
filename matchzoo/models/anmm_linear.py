@@ -12,10 +12,10 @@ from keras.activations import softmax
 from model import BasicModel
 from utils.utility import *
 
-class ANMM(BasicModel):
+class ANMM_linear(BasicModel):
     def __init__(self, config):
-        super(ANMM, self).__init__(config)
-        self._name = 'ANMM'
+        super(ANMM_linear, self).__init__(config)
+        self._name = 'ANMM_linear'
         self.check_list = [ 'text1_maxlen', 'bin_num',
                 'embed', 'embed_size', 'vocab_size',
                 'num_layers', 'hidden_sizes']
@@ -35,26 +35,9 @@ class ANMM(BasicModel):
         self.set_default('dropout_rate', 0.)
         self.config.update(config)
 
-    def build(self):
-        def tensor_product(x):
-            a = x[0]
-            b = x[1]
-            y = K.batch_dot(a, b, axis=1)
-            y = K.einsum('ijk, ikl->ijl', a, b)
-            return y
-        query = Input(name='query', shape=(self.config['text1_maxlen'],))
-        show_layer_info('Input', query)
-        doc = Input(name='doc', shape=(self.config['text1_maxlen'], self.config['bin_num']))
-        show_layer_info('Input', doc)
-
-        embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = False)
-
-        q_embed = embedding(query)
-        show_layer_info('Embedding', q_embed)
-        q_w = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(q_embed)
-        show_layer_info('Dense', q_w)
-        q_w = Lambda(lambda x: softmax(x, axis=1), output_shape=(self.config['text1_maxlen'], ))(q_w)
-        show_layer_info('Lambda-softmax', q_w)
+    def get_doc(fieldname):
+        doc = Input(name=fieldname, shape=(self.config['text1_maxlen'], self.config['bin_num']))
+        #show_layer_info(fieldname, doc)
         z = doc
         #z = Dropout(rate=self.config['dropout_rate'])(z)
         #show_layer_info('Dropout', z)
@@ -62,19 +45,49 @@ class ANMM(BasicModel):
             dense_layer = Dense(self.config['hidden_sizes'][i], kernel_initializer=self.initializer_fc)
             z = dense_layer(z)
             z = Activation('tanh')(z)
-            show_layer_info('Dense', z)
+            #show_layer_info('Dense', z)
         dense_layer2 = Dense(self.config['hidden_sizes'][self.config['num_layers']-1], kernel_initializer=self.initializer_fc)
         z = dense_layer2(z)
-        show_layer_info('Dense', z)
+        #show_layer_info('Dense', z)
         z = Permute((2, 1))(z)
-        show_layer_info('Permute', z)
+        #show_layer_info('Permute', z)
         z = Reshape((self.config['text1_maxlen'],))(z)
-        show_layer_info('z shape', z)
+        #show_layer_info('z shape', z)
+	return z
+
+    def get_attention(): 
+        query = Input(name='query', shape=(self.config['text1_maxlen'],))
+        #show_layer_info('Input', query)
+
+        embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = False)
+
+        q_embed = embedding(query)
+        #show_layer_info('Embedding', q_embed)
+        q_w = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(q_embed)
+        #show_layer_info('Dense', q_w)
+        q_w = Lambda(lambda x: softmax(x, axis=1), output_shape=(self.config['text1_maxlen'], ))(q_w)
+        #show_layer_info('Lambda-softmax', q_w)
         q_w = Reshape((self.config['text1_maxlen'],))(q_w)
-        show_layer_info('q_w shape', q_w)
-        out_ = Dot( axes= [1, 1])([z, q_w])
-        if self.config['target_mode'] == 'classification':
-            out_ = Dense(2, activation='softmax')(out_)
-        show_layer_info('Dense', out_)
+        #show_layer_info('q_w shape', q_w)
+	return q_w
+
+    def build(self):
+        def tensor_product(x):
+            a = x[0]
+            b = x[1]
+            y = K.batch_dot(a, b, axis=1)
+            y = K.einsum('ijk, ikl->ijl', a, b)
+            return y
+	title = get_doc("title")
+	question = get_doc("question")
+	answer = get_doc("answer")
+	q_w = get_attention()
+        out_title = Dot(axes= [1, 1])([title, q_w])
+        out_question = Dot(axes = [1, 1])([question, q_w])
+        out_answer = Dot(axes = [1, 1])([answer, q_w])
+        out_ = [out_title, out_question, out_answer]
+        out_ = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(out_)
+        out_ = Lambda(lambda x: softmax(x, axis=1), output_shape=(1, ))(out_)
+        show_layer_info("out layer", out_)
         model = Model(inputs=[query, doc], outputs=[out_])
         return model

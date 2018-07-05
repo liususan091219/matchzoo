@@ -35,13 +35,14 @@ cd $code_path
 array=( 200 )
 for i in "${array[@]}"
 do
-	if [[ $3 -eq wikiqa ]]; then
+	if [[ "$3" = "wikiqa" ]]; then
 		fold_name="glove_general"
 		filename="glove.6B."${i}"d.txt"
-	else:
+	else
 		fold_name="glove_stackOF"
 		filename="gensim_glove_"${i}"d.txt"
 	fi
+        echo $fold_name
         python gen_w2v.py ${glove_dir}/${fold_name}/${filename} ${data_path}/word_dict.txt ${data_path}/embed_glove_d${i}
         python norm_embed.py ${data_path}/embed_glove_d${i} ${data_path}/embed_glove_d${i}_norm
 done
@@ -51,10 +52,7 @@ done
 # generate idf file
 cat ${data_path}word_stats.txt | cut -d ' ' -f 1,4 > ${data_path}embed.idf
 
-for i in "${array[@]}"
-do
-     python gen_hist4drmm.py 60 $data_path $i
-     python gen_binsum4anmm.py 20 $data_path $i # the default number of bin is 20
-done
+python gen_hist4drmm.py 60 $data_path 200
+python gen_binsum4anmm.py 20 $data_path 200 # the default number of bin is 20
 
 echo "Done ..."

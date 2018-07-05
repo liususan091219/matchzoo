@@ -290,14 +290,14 @@ class DRMM_PairGenerator(PairBasicGenerator):
         self.data1 = config['data1']
         self.data2 = config['data2']
         self.data1_maxlen = config['text1_maxlen']
-        self.data2_maxlen = config['text2_maxlen']
+        #self.data2_maxlen = config['text2_maxlen']
         self.embed = config['embed']
         if 'bin_num' in config:
             self.hist_size = config['bin_num']
         else:
             self.hist_size = config['hist_size']
         self.fill_word = config['vocab_size'] - 1
-        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'embed'])
+        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'embed'])
         self.use_hist_feats = False
         if 'hist_feats_file' in config:
             hist_feats = read_features_without_id(data_root + config['hist_feats_file'])
@@ -358,7 +358,6 @@ class DRMM_PairGenerator(PairBasicGenerator):
             X1[i*2+1, :d1_len],  X1_len[i*2+1] = d1_cont[:d1_len],   d1_len
             X2[i*2], X2_len[i*2]   = self.cal_hist(d1, d2p, self.data1_maxlen, self.hist_size), d2p_len
             X2[i*2+1], X2_len[i*2+1] = self.cal_hist(d1, d2n, self.data1_maxlen, self.hist_size), d2n_len
-
         return X1, X1_len, X2, X2_len, Y
 
     def get_batch_iter(self):
