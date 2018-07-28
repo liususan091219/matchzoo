@@ -46,7 +46,7 @@ def read_dict(infile):
 if __name__ == "__main__":
 	lang = sys.argv[1]
 	#component = sys.argv[2]
-    rootdir = sys.argv[3]
+	rootdir = sys.argv[2]
 	prepare = Preparation()
 	srcdir = rootdir + "stackOF/data_" + lang + "/"
 	word_dstdir = rootdir + "stackOF/" + lang + "_linear/"
