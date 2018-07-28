@@ -8,7 +8,7 @@ code_path=$grandparentdir/data/stackOF/
 glove_dir=$rootdir/glove/
 
 cd $code_path
-python prepare_mz_data.py $1 $rootdir
+python prepare_mz_data_linear.py $1 $rootdir
 
 # generate word embedding
 
