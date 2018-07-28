@@ -61,7 +61,7 @@ if __name__ == '__main__':
             fout_ans.write(' '.join(map(str, curr_bin_sum_ans.tolist())))
             fout_tit.write('\n')
             fout_ques.write('\n')
-            cout_ans.write('\n')
+            fout_ans.write('\n')
         fout_tit.close()
         fout_ques.close()
         fout_ans.close()
