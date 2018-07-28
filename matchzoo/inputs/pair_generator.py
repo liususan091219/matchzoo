@@ -8,21 +8,26 @@ import numpy as np
 from utils.rank_io import *
 from layers import DynamicMaxPooling
 import scipy.sparse as sp
+import inputs
 
 class PairBasicGenerator(object):
     def __init__(self, data_root, config):
         self.__name = 'PairBasicGenerator'
         self.config = config
+        suffix = config["suffix"]
         rel_file = data_root + config['relation_file']
-        self.rel = read_relation(filename=rel_file)
+        readrelation_funcname = "read_relation" + suffix
+        self.rel = inputs.get(readrelation_funcname)(filename=rel_file)
         self.batch_size = config['batch_size']
         self.check_list = ['relation_file', 'batch_size']
         self.point = 0
         if config['use_iter']:
-            self.pair_list_iter = self.make_pair_iter(self.rel)
+            makepair_funcname = "self.make_pair_iter" + suffix
+            self.pair_list_iter = inputs.get(makepair_funcname)(self.rel)
             self.pair_list = []
         else:
-            self.pair_list = self.make_pair_static(self.rel)
+            makepair_funcname = "self.make_pair_static" + suffix
+            self.pair_list = inputs.get(makepair_funcname)(self.rel)
             self.pair_list_iter = None
 
     def check(self):
@@ -50,6 +55,31 @@ class PairBasicGenerator(object):
         print('Pair Instance Count:', len(pair_list), end='\n')
         return pair_list
 
+    def make_pair_static_linear(self, rel):
+        rel_set = {}
+        pair_list = []
+        for label, d1, d2, d3, d4 in rel:
+            if d1 not in rel_set:
+                rel_set[d1] = {}
+            if label not in rel_set[d1]:
+                rel_set[d1][label] = []
+            rel_set[d1][label].append((d2, d3, d4))
+        for d1 in rel_set:
+            label_list = sorted(rel_set[d1].keys(), reverse = True)
+            for hidx, high_label in enumerate(label_list[:-1]):
+                for low_label in label_list[hidx+1:]:
+                    for high_tuple in rel_set[d1][high_label]:
+                        for low_tuple in rel_set[d1][low_label]:
+                            high_d2 = high_tuple[0]
+                            high_d3 = high_tuple[1]
+                            high_d4 = high_tuple[2]
+                            low_d1 = low_tuple[0]
+                            low_d2 = low_tuple[1]
+                            low_d3 = low_tuple[2]
+                            pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
+        print('Pair Instance Count:', len(pair_list), end='\n')
+        return pair_list
+
     def make_pair_iter(self, rel):
         rel_set = {}
         pair_list = []
@@ -70,6 +100,34 @@ class PairBasicGenerator(object):
                         for high_d2 in rel_set[d1][high_label]:
                             for low_d2 in rel_set[d1][low_label]:
                                 pair_list.append( (d1, high_d2, low_d2) )
+            yield pair_list
+
+    def make_pair_iter_linear(self, rel):
+        rel_set = {}
+        pair_list = []
+        for label, d1, d2, d3, d4 in rel:
+            if d1 not in rel_set:
+                rel_set[d1] = {}
+            if label not in rel_set[d1]:
+                rel_set[d1][label] = []
+            rel_set[d1][label].append((d2, d3, d4))
+
+        while True:
+            rel_set_sample = random.sample(rel_set.keys(), self.config['query_per_iter'])
+
+            for d1 in rel_set_sample:
+                label_list = sorted(rel_set[d1].keys(), reverse = True)
+                for hidx, high_label in enumerate(label_list[:-1]):
+                    for low_label in label_list[hidx+1:]:
+                        for high_tuple in rel_set[d1][high_label]:
+                            for low_tuple in rel_set[d1][low_label]:
+                                high_d2 = high_tuple[0]
+                                high_d3 = high_tuple[1]
+                                high_d4 = high_tuple[2]
+                                low_d2 = low_tuple[0]
+                                low_d3 = low_tuple[1]
+                                low_d4 = low_tuple[2]
+                                pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
             yield pair_list
 
     def get_batch_static(self):
@@ -392,6 +450,154 @@ class DRMM_PairGenerator(PairBasicGenerator):
         while True:
             X1, X1_len, X2, X2_len, Y = self.get_batch()
             yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
+
+class DRMM_PairGenerator_linear(PairBasicGenerator):
+    def __init__(self, data_root, config):
+        super(DRMM_PairGenerator, self).__init__(data_root, config=config)
+        self.__name = 'DRMM_PairGenerator_linear'
+        self.data1 = config["data1"]
+        self.data2 = config["data2"]
+        self.data3 = config["data3"]
+        self.data4 = config["data4"]
+        self.data1_maxlen = config['text1_maxlen']
+        self.embed = config['embed']
+        if 'bin_num' in config:
+            self.hist_size = config['bin_num']
+        else:
+            self.hist_size = config['hist_size']
+        self.fill_word = config['vocab_size'] - 1
+        self.check_list.extend(['data1', 'data2', "data3", "data4", 'text1_maxlen', 'embed'])
+        self.use_hist_feats = False
+        if 'hist_feats_file' in config:
+            hist_feats_title = read_features_without_id(data_root + config["hist_feats_file_title"])
+            hist_feats_question = read_features_without_id(data_root + config["hist_feats_file_question"])
+            hist_feats_answer = read_features_without_id(data_root + config["hist_feats_file_answer"])
+            self.hist_feats = {}
+            for idx, (label, d1, d2, d3, d4) in enumerate(self.rel):
+                self.hist_feats_title[(d1, d2)] = hist_feats_title[idx]
+                self.hist_feats_question[(d1, d3)] = hist_feats_question[idx]
+                self.hist_feats_answer[(d1, d4)] = hist_feats_answer[idx]
+            self.use_hist_feats = True
+        if config['use_iter']:
+            self.batch_iter = self.get_batch_iter()
+        if not self.check():
+            raise TypeError('[DRMM_PairGenerator] parameter check wrong.')
+        print('[DRMM_PairGenerator] init done', end='\n')
+
+    def cal_hist(self, t1, t2, thisdata2, thishistfeats_variable, data1_maxlen, hist_size):
+        mhist = np.zeros((data1_maxlen, hist_size), dtype=np.float32)
+        t1_cont = list(self.data1[t1])
+        thist2_cont = list(self.thisdata2[t2])
+        d1len = len(t1_cont)
+        if self.use_hist_feats:
+            assert (t1, t2) in thishistfeats_variable
+            curr_pair_feats = list(thishistfeats_variable[(t1, t2)])
+            caled_hist = np.reshape(curr_pair_feats, (d1len, hist_size))
+            if d1len < data1_maxlen:
+                mhist[:d1len, :] = caled_hist[:, :]
+            else:
+                mhist[:, :] = caled_hist[:data1_maxlen, :]
+        else:
+            t1_rep = self.embed[t1_cont]
+            t2_rep = self.embed[thist2_cont]
+            mm = t1_rep.dot(np.transpose(t2_rep))
+            for (i,j), v in np.ndenumerate(mm):
+                if i >= data1_maxlen:
+                    break
+                vid = int((v + 1.) / 2. * ( hist_size - 1.))
+                mhist[i][vid] += 1.
+            mhist += 1.
+            mhist = np.log10(mhist)
+        return mhist
+
+    def get_batch_static(self):
+        X1 = np.zeros((self.batch_size*2, self.data1_maxlen), dtype=np.int32)
+        X1_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+        X2 = np.zeros((self.batch_size*2, self.data1_maxlen, self.hist_size), dtype=np.float32)
+        X2_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+        X3 = np.zeros((self.batch_size*2, self.data1_maxlen, self.hist_size), dtype=np.float32)
+        X3_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+        X4 = np.zeros((self.batch_size*2, self.data1_maxlen, self.hist_size), dtype=np.float32)
+        X4_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+        Y = np.zeros((self.batch_size*2,), dtype=np.int32)
+
+        Y[::2] = 1
+        X1[:] = self.fill_word
+        for i in range(self.batch_size):
+            d1, d2p, d3p, d4p, d2n, d3n, d4n = random.choice(self.pair_list)
+            d1_cont = list(self.data1[d1])
+            d2p_cont = list(self.data2[d2p])
+            d2n_cont = list(self.data2[d2n])
+            d3p_cont = list(self.data3[d3p])
+            d3n_cont = list(self.data3[d3n])
+            d4p_cont = list(self.data4[d4p])
+            d4n_cont = list(self.data4[d4n])
+            d1_len = min(self.data1_maxlen, len(d1_cont))
+            d2p_len = len(d2p_cont)
+            d2n_len = len(d2n_cont)
+            d3p_len = len(d3p_cont)
+            d3n_len = len(d3n_cont)
+            d4p_len = len(d4p_cont)
+            d4n_len = len(d4n_cont)
+            X1[i*2,   :d1_len],  X1_len[i*2]   = d1_cont[:d1_len],   d1_len
+            X1[i*2+1, :d1_len],  X1_len[i*2+1] = d1_cont[:d1_len],   d1_len
+            X2[i*2], X2_len[i*2]   = self.cal_hist(d1, d2p, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2p_len
+            X2[i*2+1], X2_len[i*2+1] = self.cal_hist(d1, d2n, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2n_len
+            X3[i*2], X3_len[i*2] = self.cal_hist(d1, d3p, self.data3, self.hist_feats_question, self.data1_maxlen, self.hist_size), d3p_len
+            X3[i*2+1], X3_len[i*2+1] = self.cal_hist(d1, d3n, self.data3, self.hist_feats_quesiton, self.data1_maxlen, self.hist_size), d3n_len
+            X4[i*2], X4_len[i*2+1] = self.cal_hist(d1, d4p, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4p_len
+            X4[i*2+1], X4_len[i*2+1] = self.cal_hist(d1, d4n, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4n_len
+        return X1, X1_len, X2, X2_len, X3, X3_len, X4, X4_len, Y
+
+    def get_batch_iter(self):
+        while True:
+            self.pair_list = next(self.pair_list_iter)
+            for _ in range(self.config['batch_per_iter']):
+                X1 = np.zeros((self.batch_size*2, self.data1_maxlen), dtype=np.int32)
+                X1_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+                X2 = np.zeros((self.batch_size*2, self.data1_maxlen, self.hist_size), dtype=np.float32)
+                X2_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+                X3 = np.zeros((self.batch_size*2, self.data1_maxlen, self.hist_size), dtype=np.float32)
+                X3_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+                X4 = np.zeros((self.batch_size*2, self.data1_maxlen, self.hist_size), dtype=np.float32)
+                X4_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+                Y = np.zeros((self.batch_size*2,), dtype=np.int32)
+
+                Y[::2] = 1
+                X1[:] = self.fill_word
+                #X2[:] = 0.
+                for i in range(self.batch_size):
+                    d1, d2p, d2n, d3p, d3n, d4p, d4n = random.choice(self.pair_list)
+                    d1_cont = list(self.data1[d1])
+                    d2p_cont = list(self.data2[d2p])
+                    d2n_cont = list(self.data2[d2n])
+                    d3p_cont = list(self.data3[d3p])
+                    d3n_cont = list(self.data3[d3n])
+                    d4p_cont = list(self.data4[d4p])
+                    d4n_cont = list(self.data4[d4n])
+                    d1_len = min(self.data1_maxlen, len(d1_cont))
+                    d2p_len = len(d2p_cont)
+                    d2n_len = len(d2n_cont)
+                    d3p_len = len(d3p_cont)
+                    d3n_len = len(d3n_cont)
+                    d4p_len = len(d4p_cont)
+                    d4n_len = len(d4n_cont)
+                    X1[i*2,   :d1_len],  X1_len[i*2]   = d1_cont[:d1_len],   d1_len
+                    X1[i*2+1, :d1_len],  X1_len[i*2+1] = d1_cont[:d1_len],   d1_len
+                    X2[i*2], X2_len[i*2]   = self.cal_hist(d1, d2p, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2p_len
+                    X2[i*2+1], X2_len[i*2+1] = self.cal_hist(d1, d2n, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2n_len
+                    X3[i*2], X3_len[i*2] = self.cal_hist(d1, d3p, self.data3, self.hist_feats_question,  self.data1_maxlen, self.hist_size), d3p_len
+                    X3[i*2+1], X3_len[i*2+1] = self.cal_hist(d1, d3n, self.data3, self.hist_feats_question, self.data1_maxlen, self.hist_size), d3n_len
+                    X4[i*2], X4_len[i*2+1] = self.cal_hist(d1, d4p, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4p_len
+                    X4[i*2+1], X4_len[i*2+1] = self.cal_hist(d1, d4n, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4n_len
+
+                yield X1, X1_len, X2, X2_len, X3, X3_len, X4, X4_len, Y
+
+    def get_batch_generator(self):
+        while True:
+            X1, X1_len, X2, X2_len, X3, X3_len, X4, X4_len, Y = self.get_batch()
+            yield ({"query": X1, "query_len": X1_len, "title": X2, "title_len": X2_len}, 
+            "question": X3, "question_len": X3_len, "answer": X4, "answer_len":X4_len, Y)
 
 class PairGenerator_Feats(PairBasicGenerator):
     def __init__(self, data_root, config):

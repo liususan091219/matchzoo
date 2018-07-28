@@ -28,7 +28,7 @@ glove_dir=$rootdir/glove/
 # generate the mz-datasets
 
 cd $code_path
-#python prepare_mz_data.py $1 $2 $rootdir
+python prepare_mz_data.py $1 $2 $rootdir
 
 # generate word embedding
 

@@ -45,16 +45,16 @@ def read_dict(infile):
 
 if __name__ == "__main__":
 	lang = sys.argv[1]
-	component = sys.argv[2]
-        rootdir = sys.argv[3]
+	#component = sys.argv[2]
+    rootdir = sys.argv[3]
 	prepare = Preparation()
 	srcdir = rootdir + "stackOF/data_" + lang + "/"
-	word_dstdir = rootdir + "stackOF/" + lang + "_slf_" + component + "/"
+	word_dstdir = rootdir + "stackOF/" + lang + "_linear/"
 	if not os.path.exists(word_dstdir):
 		os.makedirs(word_dstdir)	
 	relation_dstdir = word_dstdir 
 	splitfiles = [srcdir + lang + "_train_qid.txt", srcdir + lang + "_valid_qid.txt", srcdir + lang + "_test_qid.txt"]
-	corpus, rel_train, rel_valid, rel_test, idMap1, idMap2 = prepare.run_with_separate_self(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang, component)
+	corpus, rel_train, rel_valid, rel_test, idMap1, idMap2 = prepare.run_with_separate_linear(srcdir, splitfiles[0], splitfiles[1], splitfiles[2], lang)
 	write_idMap(idMap1, idMap2, word_dstdir)
 	print('total corpus : %d ...' % (len(corpus)))
 	print('total relation-train : %d ...' % (len(rel_train)))
@@ -62,12 +62,12 @@ if __name__ == "__main__":
 	print('total relation-test: %d ...' % (len(rel_test)))
 	prepare.save_corpus(word_dstdir + 'corpus.txt', corpus)
 	
-	prepare.save_relation(relation_dstdir + 'relation_train.txt', rel_train)
-	prepare.save_relation(relation_dstdir + 'relation_valid.txt', rel_valid)
-	prepare.save_relation(relation_dstdir + 'relation_test.txt', rel_test)
+	prepare.save_relation_linear(relation_dstdir + 'relation_train.txt', rel_train)
+	prepare.save_relation_linear(relation_dstdir + 'relation_valid.txt', rel_valid)
+	prepare.save_relation_linear(relation_dstdir + 'relation_test.txt', rel_test)
 	print('Preparation finished ...')
 	
-	preprocessor = Preprocess()#word_stem_config={'enable': False}, word_filter_config={'min_freq': 0})
+	preprocessor = Preprocess(word_stem_config={'enable': True}, word_filter_config={'min_freq': 0})
 	dids, docs = preprocessor.run(word_dstdir + 'corpus.txt')
 	preprocessor.save_word_dict(word_dstdir + 'word_dict.txt', True)
 	preprocessor.save_words_stats(word_dstdir + 'word_stats.txt', True)

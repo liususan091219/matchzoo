@@ -106,7 +106,7 @@ class Preparation(object):
         f.close()
         return corpus_q, corpus_d, rels
 
-    def run_with_separate_self(self, srcdir, train_file, valid_file, test_file, lang, component):
+    def run_with_separate_linear(self, srcdir, train_file, valid_file, test_file, lang):
         qid2fold = {}
         for file_path in list([train_file, valid_file, test_file]):
             f = codecs.open(file_path, 'r', encoding='utf8')
@@ -127,37 +127,30 @@ class Preparation(object):
         test_rels = []
         idMap1 = {}
         idMap2 = {}
-        qs = set()
-        f_corpus = codecs.open(srcdir + lang + "_qid2all.nostop.txt", "r")
-        qid2component= {}
-        qid2title = {}
-        if component == "title":
-           hashtagprefix = "T"
-        elif component == "question":
-           hashtagprefix = "Q"
-        else:
-           hashtagprefix = "A"
+        #qs = set()
+        f_corpus = codecs.open(srcdir + lang + "_qid2all.txt", "r")
+        qid2allcomponent= {}
+        # if component == "title":
+        #    hashtagprefix = "T"
+        # elif component == "question":
+        #    hashtagprefix = "Q"
+        # else:
+        #    hashtagprefix = "A"
         for line in f_corpus:
             tokens = line.strip("\n").split("\t")
             qid = tokens[0]
             title = tokens[1]
             question = tokens[2]
             answer = tokens[3]
-            qid2title[qid] = title 
-            if component == "title":
-               qid2component[qid] = title
-            elif component == "question":
-               qid2component[qid] = question
-            else:
-               assert component == "answer"
-               qid2component[qid] = answer
+            qid2allcomponent.setdefault(qid, [""] * 3)
+            qid2allcomponent[qid][0] = title
+            qid2allcomponent[qid][1] = question
+            qid2allcomponent[qid][2] = answer
         f_rel = codecs.open(srcdir + lang + "_cosidf.txt", "r")
         f_rel.readline()
-	queryset = set([])
-        for line in f_rel:	
+        for line in f_rel:  
             tokens = line.strip("\n").split("\t")
             qid1 = tokens[0]
-            queryset.add(qid1)
             qid2 = tokens[1]
             fold1 = qid2fold[qid1]
             if fold1 == "train":
@@ -167,15 +160,21 @@ class Preparation(object):
             elif fold1 == "test":
                 rels = test_rels
             label = tokens[3]
-            t1 = qid2title[qid1]
-            t2 = qid2component[qid2]
+            t1 = qid2allcomponent[qid1][0]
+            t2 = qid2allcomponent[qid2][0]
+            q2 = qid2allcomponent[qid2][1]
+            a2 = qid2allcomponent[qid2][2]
             id1 = "T" + qid1 #self.get_text_id(hashid, t1, 'T')
-            id2 = hashtagprefix + qid2 #self.get_text_id(hashid, t2, hashtagprefix)
-            qs.add(qid1)
-            qs.add(qid2)
+            id2 = "T" + qid2 #self.get_text_id(hashid, t2, hashtagprefix)
+            id3 = "Q" + qid2
+            id4 = "A" + qid2
+            #qs.add(qid1)
+            #qs.add(qid2)
             corpus[id1] = t1
             corpus[id2] = t2
-            rels.append((label, id1, id2))
+            corpus[id3] = q2
+            corpus[id4] = a2
+            rels.append((label, id1, id2, id3, id4))
             if qid1 in idMap1:
                 assert idMap1[qid1] == id1
             else:
@@ -184,25 +183,9 @@ class Preparation(object):
                 assert idMap2[qid2] == id2
             else:
                 idMap2[qid2] = id2
-        for qid1 in queryset:
-            fold1 = qid2fold[qid1]
-            if fold1 == "train":
-                rels = train_rels
-            elif fold1 == "valid":
-                continue
-            elif fold1 == "test":
-                continue
-            t1 = qid2title[qid1]
-            t2 = qid2component[qid1]
-            id1 = "T" + qid1 #self.get_text_id(hashid, t1, 'T')
-            id2 = hashtagprefix + qid1 #self.get_text_id(hashid, t2, hashtagprefix)
-            corpus[id1] = t1
-            corpus[id2] = t2
-            rels.append(("1", id1, id2))
         f_corpus.close()
         f_rel.close()
         return corpus, train_rels, valid_rels, test_rels, idMap1, idMap2
-
 
     def run_with_separate(self, srcdir, train_file, valid_file, test_file, lang, component):
         qid2fold = {}
@@ -352,6 +335,13 @@ class Preparation(object):
         f = open(file_path, 'w')
         for rel in relations:
             f.write('%s %s %s\n' % (rel))
+        f.close()
+
+    @staticmethod
+    def save_relation_linear(file_path, relations):
+        f = open(file_path, 'w')
+        for rel in relations:
+            f.write('%s %s %s %s %s\n' % (rel))
         f.close()
 
     @staticmethod
