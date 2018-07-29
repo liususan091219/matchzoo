@@ -286,6 +286,146 @@ class Triletter_ListGenerator(ListBasicGenerator):
             list_count_ls.append(list_count)
         return x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls
 
+class DRMM_ListGenerator_linear(ListBasicGenerator):
+    def __init__(self, data_root, config={}):
+        super(DRMM_ListGenerator, self).__init__(data_root, config=config)
+        self.data1 = config['data1']
+        self.data2 = config['data2']
+        self.data1_maxlen = config['text1_maxlen']
+      #  self.data2_maxlen = config['text2_maxlen']
+        self.fill_word = config['vocab_size'] - 1
+        self.embed = config['embed']
+        if 'bin_num' in config:
+            self.hist_size = config['bin_num']
+        else:
+            self.hist_size = config['hist_size']
+        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'embed'])
+        self.use_hist_feats = False
+        if 'hist_feats_file' in config:
+            hist_feats = read_features_without_id(data_root + config['hist_feats_file'])
+            self.hist_feats = {}
+            for idx, (label, d1, d2) in enumerate(self.rel):
+                self.hist_feats[(d1, d2)] = hist_feats[idx]
+            self.use_hist_feats = True
+        if not self.check():
+            raise TypeError('[DRMM_ListGenerator] parameter check wrong.')
+        print('[DRMM_ListGenerator] init done, list number: %d. ' % (self.num_list), end='\n')
+
+    def cal_hist(self, t1, t2, thisdata2, thishistfeats_variable, data1_maxlen, hist_size):
+        mhist = np.zeros((data1_maxlen, hist_size), dtype=np.float32)
+        t1_cont = list(self.data1[t1])
+        thist2_cont = list(self.thisdata2[t2])
+        d1len = len(t1_cont)
+        if self.use_hist_feats:
+            assert (t1, t2) in self.hist_feats
+            caled_hist = np.reshape(self.hist_feats[(t1, t2)], (d1len, hist_size))
+            if d1len < data1_maxlen:
+                mhist[:d1len, :] = caled_hist[:, :]
+            else:
+                mhist[:, :] = caled_hist[:data1_maxlen, :]
+        else:
+            t1_rep = self.embed[t1_cont]
+            t2_rep = self.embed[t2_cont]
+            mm = t1_rep.dot(np.transpose(t2_rep))
+            for (i,j), v in np.ndenumerate(mm):
+                if i >= data1_maxlen:
+                    break
+                vid = int((v + 1.) / 2. * ( hist_size - 1.))
+                mhist[i][vid] += 1.
+            mhist += 1.
+            mhist = np.log10(mhist)
+        return mhist
+
+    def get_batch(self):
+        while self.point < self.num_list:
+            currbatch = []
+            if self.point + self.batch_list <= self.num_list:
+                currbatch = self.list_list[self.point: self.point + self.batch_list]
+                self.point += self.batch_list
+            else:
+                currbatch = self.list_list[self.point:]
+                self.point = self.num_list
+            bsize = sum([len(pt[1]) for pt in currbatch])
+            list_count = [0]
+            ID_pairs = []
+            X1 = np.zeros((bsize, self.data1_maxlen), dtype=np.int32)
+            X1_len = np.zeros((bsize,), dtype=np.int32)
+            X2 = np.zeros((bsize, self.data1_maxlen, self.hist_size), dtype=np.float32)
+            X2_len = np.zeros((bsize,), dtype=np.int32)
+            X3 = np.zeros((bsize, self.data1_maxlen, self.hist_size), dtype=np.float32)
+            X3_len = np.zeros((bsize,), dtype=np.int32)
+            X4 = np.zeros((bsize, self.data1_maxlen, self.hist_size), dtype=np.float32)
+            X4_len = np.zeros((bsize,), dtype=np.int32)
+            Y = np.zeros((bsize,), dtype= np.int32)
+            X1[:] = self.fill_word
+            j = 0
+            for pt in currbatch:
+                d1, d2_list = pt[0], pt[1]
+                d1_cont = list(self.data1[d1])
+                d1_len = min(self.data1_maxlen, len(d1_cont))
+                list_count.append(list_count[-1] + len(d2_list))
+                for l, d2 in d2_list:
+                    X1[j, :d1_len], X1_len[j] = d1_cont[:d1_len], d1_len
+                    d2_cont = list(self.data2[d2])
+                    d2_len = len(d2_cont)
+                    d3_cont = list(self.data3[d3])
+                    d3_len = len(d3_cont)
+                    d4_cont = list(self.data4[d4])
+                    d4_len = len(d4_cont)
+                    X2[j], X2_len[j] = self.cal_hist(d1, d2, self.data2, self.data1_maxlen, self.hist_size), d2_len
+                    X3[j], X3_len[j] = self.cal_hist(d1, d3, self.data3, self.data1_maxlen, self.hist_size), d3_len
+                    X4[j], X4_len[j] = self.cal_hist(d1, d4, self.data4, self.data1_maxlen, self.hist_size), d4_len
+                    ID_pairs.append((d1, d2, d3, d4))
+                    Y[j] = l
+                    j += 1
+            yield X1, X1_len, X2, X2_len, X3, X3_len, X4, X4_len, Y, ID_pairs, list_count
+
+    def get_batch_generator(self):
+        for X1, X1_len, X2, X2_len, X3, X3_len, X4, X4_len, Y, ID_pairs, list_counts in self.get_batch():
+            yield ({"query": X1, "query_len": X1_len, "title": X2, "title_len": X2_len, 
+                "question": X3, "question_len": X3_len, "answer": X4, "answer_len": X4_len, 
+                "ID": ID_pairs, "list_counts": list_counts}, Y)
+    
+    def get_all_data(self):
+        x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls = [], [], [], [], [], []
+        while self.point < self.num_list:
+            currbatch = []
+            if self.point + self.batch_list <= self.num_list:
+                currbatch = self.list_list[self.point: self.point + self.batch_list]
+                self.point += self.batch_list
+            else:
+                currbatch = self.list_list[self.point:]
+                self.point = self.num_list
+            bsize = sum([len(pt[1]) for pt in currbatch])
+            list_count = [0]
+            X1 = np.zeros((bsize, self.data1_maxlen), dtype=np.int32)
+            X1_len = np.zeros((bsize,), dtype=np.int32)
+            X2 = np.zeros((bsize, self.data1_maxlen, self.hist_size), dtype=np.float32)
+            X2_len = np.zeros((bsize,), dtype=np.int32)
+            Y = np.zeros((bsize,), dtype= np.int32)
+            X1[:] = self.fill_word
+            X2[:] = self.fill_word
+            j = 0
+            for pt in currbatch:
+                d1, d2_list = pt[0], pt[1]
+                d1_cont = list(self.data1[d1])
+                list_count.append(list_count[-1] + len(d2_list))
+                d1_len = min(self.data1_maxlen, len(d1_cont))
+                for l, d2 in d2_list:
+                    d2_cont = list(self.data2[d2])
+                    d2_len = len(d2_cont)
+                    X1[j, :d1_len], X1_len[j] = d1_cont[:d1_len], d1_len
+                    X2[j], X2_len[j] = self.cal_hist(d1, d2, self.data1_maxlen, self.hist_size), d2_len
+                    Y[j] = l
+                    j += 1
+            x1_ls.append(X1)
+            x1_len_ls.append(X1_len)
+            x2_ls.append(X2)
+            x2_len_ls.append(X2_len)
+            y_ls.append(Y)
+            list_count_ls.append(list_count)
+        return x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls
+
 class DRMM_ListGenerator(ListBasicGenerator):
     def __init__(self, data_root, config={}):
         super(DRMM_ListGenerator, self).__init__(data_root, config=config)
