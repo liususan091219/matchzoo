@@ -10,8 +10,8 @@ from layers import DynamicMaxPooling
 import scipy.sparse as sp
 import inputs
 
-class PairBasicGenerator_linear(object):
-    def __init__(self, data_root, config):
+# class PairBasicGenerator_linear(object):
+#     def __init__(self, data_root, config):
 
 class PairBasicGenerator(object):
     def __init__(self, data_root, config):
