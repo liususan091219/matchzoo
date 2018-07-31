@@ -514,7 +514,9 @@ class DRMM_PairGenerator_linear(PairBasicGenerator_linear):
             hist_feats_title = read_features_without_id(data_root + config["hist_feats_file_title"])
             hist_feats_question = read_features_without_id(data_root + config["hist_feats_file_question"])
             hist_feats_answer = read_features_without_id(data_root + config["hist_feats_file_answer"])
-            self.hist_feats = {}
+            self.hist_feats_title = {}
+            self.hist_feats_question = {}
+            self.hist_feats_answer = {}
             for idx, (label, d1, d2, d3, d4) in enumerate(self.rel):
                 self.hist_feats_title[(d1, d2)] = hist_feats_title[idx]
                 self.hist_feats_question[(d1, d3)] = hist_feats_question[idx]
