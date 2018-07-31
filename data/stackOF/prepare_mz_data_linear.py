@@ -67,7 +67,7 @@ if __name__ == "__main__":
 	prepare.save_relation_linear(relation_dstdir + 'relation_test.txt', rel_test)
 	print('Preparation finished ...')
 	
-	preprocessor = Preprocess(word_stem_config={'enable': True}, word_filter_config={'min_freq': 0})
+	preprocessor = Preprocess(word_stem_config={'enable': False}, word_filter_config={'min_freq': 0})
 	dids, docs = preprocessor.run(word_dstdir + 'corpus.txt')
 	preprocessor.save_word_dict(word_dstdir + 'word_dict.txt', True)
 	preprocessor.save_words_stats(word_dstdir + 'word_stats.txt', True)
