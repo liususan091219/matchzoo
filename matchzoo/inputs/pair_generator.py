@@ -531,7 +531,7 @@ class DRMM_PairGenerator_linear(PairBasicGenerator_linear):
     def cal_hist(self, t1, t2, thisdata2, thishistfeats_variable, data1_maxlen, hist_size):
         mhist = np.zeros((data1_maxlen, hist_size), dtype=np.float32)
         t1_cont = list(self.data1[t1])
-        thist2_cont = list(self.thisdata2[t2])
+        thist2_cont = list(thisdata2[t2])
         d1len = len(t1_cont)
         if self.use_hist_feats:
             assert (t1, t2) in thishistfeats_variable
