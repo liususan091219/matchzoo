@@ -106,10 +106,10 @@ class PairBasicGenerator_linear(object):
         self.check_list = ['relation_file', 'batch_size']
         self.point = 0
         if config['use_iter']:
-            self.pair_list_iter = self.make_pair_iter(self.rel)
+            self.pair_list_iter = self.make_pair_iter_linear(self.rel)
             self.pair_list = []
         else:
-            self.pair_list = self.make_pair_static(self.rel)
+            self.pair_list = self.make_pair_static_linear(self.rel)
             self.pair_list_iter = None
 
     def check(self):
