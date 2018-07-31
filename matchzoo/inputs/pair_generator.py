@@ -137,9 +137,9 @@ class PairBasicGenerator_linear(object):
                             high_d2 = high_tuple[0]
                             high_d3 = high_tuple[1]
                             high_d4 = high_tuple[2]
-                            low_d1 = low_tuple[0]
-                            low_d2 = low_tuple[1]
-                            low_d3 = low_tuple[2]
+                            low_d2 = low_tuple[0]
+                            low_d3 = low_tuple[1]
+                            low_d4 = low_tuple[2]
                             pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
         print('Pair Instance Count:', len(pair_list), end='\n')
         return pair_list
