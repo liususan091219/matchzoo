@@ -10,9 +10,6 @@ from layers import DynamicMaxPooling
 import scipy.sparse as sp
 import inputs
 
-# class PairBasicGenerator_linear(object):
-#     def __init__(self, data_root, config):
-
 class PairBasicGenerator(object):
     def __init__(self, data_root, config):
         self.__name = 'PairBasicGenerator'
@@ -35,6 +32,7 @@ class PairBasicGenerator(object):
                 print('[%s] Error %s not in config' % (self.__name, e), end='\n')
                 return False
         return True
+
     def make_pair_static(self, rel):
         rel_set = {}
         pair_list = []
@@ -98,148 +96,103 @@ class PairBasicGenerator(object):
     def reset(self):
         self.point = 0
 
+class PairBasicGenerator_linear(object):
+    def __init__(self, data_root, config):
+        self.__name = 'PairBasicGenerator_linear'
+        self.config = config
+        rel_file = data_root + config['relation_file']
+        self.rel = read_relation_linear(filename = rel_file)
+        self.batch_size = config['batch_size']
+        self.check_list = ['relation_file', 'batch_size']
+        self.point = 0
+        if config['use_iter']:
+            self.pair_list_iter = self.make_pair_iter(self.rel)
+            self.pair_list = []
+        else:
+            self.pair_list = self.make_pair_static(self.rel)
+            self.pair_list_iter = None
 
-# class PairBasicGenerator(object):
-#     def __init__(self, data_root, config):
-#         self.__name = 'PairBasicGenerator'
-#         self.config = config
-#         suffix = config["suffix"]
-#         rel_file = data_root + config['relation_file']
-#         readrelation_funcname = "read_relation" + suffix
-#         self.rel = inputs.get(readrelation_funcname)(filename=rel_file)
-#         self.batch_size = config['batch_size']
-#         self.check_list = ['relation_file', 'batch_size']
-#         self.point = 0
-#         if config['use_iter']:
-#             makepair_funcname = "self.make_pair_iter" + suffix
-#             self.pair_list_iter = inputs.get(makepair_funcname)(self.rel)
-#             self.pair_list = []
-#         else:
-#             makepair_funcname = "self.make_pair_static" + suffix
-#             self.pair_list = inputs.get(makepair_funcname)(self.rel)
-#             self.pair_list_iter = None
+    def check(self):
+        for e in self.check_list:
+            if e not in self.config:
+                print('[%s] Error %s not in config' % (self.__name, e), end='\n')
+                return False
+        return True
 
-#     def check(self):
-#         for e in self.check_list:
-#             if e not in self.config:
-#                 print('[%s] Error %s not in config' % (self.__name, e), end='\n')
-#                 return False
-#         return True
-#     def make_pair_static(self, rel):
-#         rel_set = {}
-#         pair_list = []
-#         for label, d1, d2 in rel:
-#             if d1 not in rel_set:
-#                 rel_set[d1] = {}
-#             if label not in rel_set[d1]:
-#                 rel_set[d1][label] = []
-#             rel_set[d1][label].append(d2)
-#         for d1 in rel_set:
-#             label_list = sorted(rel_set[d1].keys(), reverse = True)
-#             for hidx, high_label in enumerate(label_list[:-1]):
-#                 for low_label in label_list[hidx+1:]:
-#                     for high_d2 in rel_set[d1][high_label]:
-#                         for low_d2 in rel_set[d1][low_label]:
-#                             pair_list.append( (d1, high_d2, low_d2) )
-#         print('Pair Instance Count:', len(pair_list), end='\n')
-#         return pair_list
+    def make_pair_static_linear(self, rel):
+        rel_set = {}
+        pair_list = []
+        for label, d1, d2, d3, d4 in rel:
+            if d1 not in rel_set:
+                rel_set[d1] = {}
+            if label not in rel_set[d1]:
+                rel_set[d1][label] = []
+            rel_set[d1][label].append((d2, d3, d4))
+        for d1 in rel_set:
+            label_list = sorted(rel_set[d1].keys(), reverse = True)
+            for hidx, high_label in enumerate(label_list[:-1]):
+                for low_label in label_list[hidx+1:]:
+                    for high_tuple in rel_set[d1][high_label]:
+                        for low_tuple in rel_set[d1][low_label]:
+                            high_d2 = high_tuple[0]
+                            high_d3 = high_tuple[1]
+                            high_d4 = high_tuple[2]
+                            low_d1 = low_tuple[0]
+                            low_d2 = low_tuple[1]
+                            low_d3 = low_tuple[2]
+                            pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
+        print('Pair Instance Count:', len(pair_list), end='\n')
+        return pair_list
 
-#     def make_pair_static_linear(self, rel):
-#         rel_set = {}
-#         pair_list = []
-#         for label, d1, d2, d3, d4 in rel:
-#             if d1 not in rel_set:
-#                 rel_set[d1] = {}
-#             if label not in rel_set[d1]:
-#                 rel_set[d1][label] = []
-#             rel_set[d1][label].append((d2, d3, d4))
-#         for d1 in rel_set:
-#             label_list = sorted(rel_set[d1].keys(), reverse = True)
-#             for hidx, high_label in enumerate(label_list[:-1]):
-#                 for low_label in label_list[hidx+1:]:
-#                     for high_tuple in rel_set[d1][high_label]:
-#                         for low_tuple in rel_set[d1][low_label]:
-#                             high_d2 = high_tuple[0]
-#                             high_d3 = high_tuple[1]
-#                             high_d4 = high_tuple[2]
-#                             low_d1 = low_tuple[0]
-#                             low_d2 = low_tuple[1]
-#                             low_d3 = low_tuple[2]
-#                             pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
-#         print('Pair Instance Count:', len(pair_list), end='\n')
-#         return pair_list
+    def make_pair_iter_linear(self, rel):
+        rel_set = {}
+        pair_list = []
+        for label, d1, d2, d3, d4 in rel:
+            if d1 not in rel_set:
+                rel_set[d1] = {}
+            if label not in rel_set[d1]:
+                rel_set[d1][label] = []
+            rel_set[d1][label].append((d2, d3, d4))
 
-#     def make_pair_iter(self, rel):
-#         rel_set = {}
-#         pair_list = []
-#         for label, d1, d2 in rel:
-#             if d1 not in rel_set:
-#                 rel_set[d1] = {}
-#             if label not in rel_set[d1]:
-#                 rel_set[d1][label] = []
-#             rel_set[d1][label].append(d2)
+        while True:
+            rel_set_sample = random.sample(rel_set.keys(), self.config['query_per_iter'])
 
-#         while True:
-#             rel_set_sample = random.sample(rel_set.keys(), self.config['query_per_iter'])
+            for d1 in rel_set_sample:
+                label_list = sorted(rel_set[d1].keys(), reverse = True)
+                for hidx, high_label in enumerate(label_list[:-1]):
+                    for low_label in label_list[hidx+1:]:
+                        for high_tuple in rel_set[d1][high_label]:
+                            for low_tuple in rel_set[d1][low_label]:
+                                high_d2 = high_tuple[0]
+                                high_d3 = high_tuple[1]
+                                high_d4 = high_tuple[2]
+                                low_d2 = low_tuple[0]
+                                low_d3 = low_tuple[1]
+                                low_d4 = low_tuple[2]
+                                pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
+            yield pair_list
 
-#             for d1 in rel_set_sample:
-#                 label_list = sorted(rel_set[d1].keys(), reverse = True)
-#                 for hidx, high_label in enumerate(label_list[:-1]):
-#                     for low_label in label_list[hidx+1:]:
-#                         for high_d2 in rel_set[d1][high_label]:
-#                             for low_d2 in rel_set[d1][low_label]:
-#                                 pair_list.append( (d1, high_d2, low_d2) )
-#             yield pair_list
+    def get_batch_static(self):
+        pass
 
-#     def make_pair_iter_linear(self, rel):
-#         rel_set = {}
-#         pair_list = []
-#         for label, d1, d2, d3, d4 in rel:
-#             if d1 not in rel_set:
-#                 rel_set[d1] = {}
-#             if label not in rel_set[d1]:
-#                 rel_set[d1][label] = []
-#             rel_set[d1][label].append((d2, d3, d4))
+    def get_batch_iter(self):
+        pass
 
-#         while True:
-#             rel_set_sample = random.sample(rel_set.keys(), self.config['query_per_iter'])
+    def get_batch(self):
+        if self.config['use_iter']:
+            return next(self.batch_iter)
+        else:
+            return self.get_batch_static()
 
-#             for d1 in rel_set_sample:
-#                 label_list = sorted(rel_set[d1].keys(), reverse = True)
-#                 for hidx, high_label in enumerate(label_list[:-1]):
-#                     for low_label in label_list[hidx+1:]:
-#                         for high_tuple in rel_set[d1][high_label]:
-#                             for low_tuple in rel_set[d1][low_label]:
-#                                 high_d2 = high_tuple[0]
-#                                 high_d3 = high_tuple[1]
-#                                 high_d4 = high_tuple[2]
-#                                 low_d2 = low_tuple[0]
-#                                 low_d3 = low_tuple[1]
-#                                 low_d4 = low_tuple[2]
-#                                 pair_list.append((d1, high_d2, high_d3, high_d4, low_d2, low_d3, low_d4))
-#             yield pair_list
+    def get_batch_generator(self):
+        pass
 
-#     def get_batch_static(self):
-#         pass
+    @property
+    def num_pairs(self):
+        return len(self.pair_list)
 
-#     def get_batch_iter(self):
-#         pass
-
-#     def get_batch(self):
-#         if self.config['use_iter']:
-#             return next(self.batch_iter)
-#         else:
-#             return self.get_batch_static()
-
-#     def get_batch_generator(self):
-#         pass
-
-#     @property
-#     def num_pairs(self):
-#         return len(self.pair_list)
-
-#     def reset(self):
-#         self.point = 0
+    def reset(self):
+        self.point = 0
 
 class PairGenerator(PairBasicGenerator):
     def __init__(self, data_root, config):
@@ -540,9 +493,9 @@ class DRMM_PairGenerator(PairBasicGenerator):
             X1, X1_len, X2, X2_len, Y = self.get_batch()
             yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
 
-class DRMM_PairGenerator_linear(PairBasicGenerator):
+class DRMM_PairGenerator_linear(PairBasicGenerator_linear):
     def __init__(self, data_root, config):
-        super(DRMM_PairGenerator, self).__init__(data_root, config=config)
+        super(DRMM_PairGenerator_linear, self).__init__(data_root, config=config)
         self.__name = 'DRMM_PairGenerator_linear'
         self.data1 = config["data1"]
         self.data2 = config["data2"]
@@ -570,8 +523,8 @@ class DRMM_PairGenerator_linear(PairBasicGenerator):
         if config['use_iter']:
             self.batch_iter = self.get_batch_iter()
         if not self.check():
-            raise TypeError('[DRMM_PairGenerator] parameter check wrong.')
-        print('[DRMM_PairGenerator] init done', end='\n')
+            raise TypeError('[DRMM_PairGenerator_linear] parameter check wrong.')
+        print('[DRMM_PairGenerator_linear] init done', end='\n')
 
     def cal_hist(self, t1, t2, thisdata2, thishistfeats_variable, data1_maxlen, hist_size):
         mhist = np.zeros((data1_maxlen, hist_size), dtype=np.float32)
