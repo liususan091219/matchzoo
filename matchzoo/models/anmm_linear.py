@@ -56,7 +56,7 @@ class ANMM_linear(BasicModel):
         #show_layer_info('z shape', z)
 	return z
 
-    def get_attention(self): 
+    def get_attention(self, query): 
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = False)
 
         q_embed = embedding(query)
@@ -80,7 +80,7 @@ class ANMM_linear(BasicModel):
     	title = self.get_doc("title")
     	question = self.get_doc("question")
     	answer = self.get_doc("answer")
-    	q_w = self.get_attention()
+    	q_w = self.get_attention(query)
         out_title = Dot(axes= [1, 1])([title, q_w])
         out_question = Dot(axes = [1, 1])([question, q_w])
         out_answer = Dot(axes = [1, 1])([answer, q_w])
