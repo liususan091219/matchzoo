@@ -57,9 +57,6 @@ class ANMM_linear(BasicModel):
 	return z
 
     def get_attention(self): 
-        query = Input(name='query', shape=(self.config['text1_maxlen'],))
-        #show_layer_info('Input', query)
-
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = False)
 
         q_embed = embedding(query)
@@ -79,6 +76,7 @@ class ANMM_linear(BasicModel):
             y = K.batch_dot(a, b, axis=1)
             y = K.einsum('ijk, ikl->ijl', a, b)
             return y
+        query = Input(name='query', shape=(self.config['text1_maxlen'],))
     	title = self.get_doc("title")
     	question = self.get_doc("question")
     	answer = self.get_doc("answer")
