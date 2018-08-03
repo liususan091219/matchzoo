@@ -11,6 +11,7 @@ from keras.layers import *
 from keras.activations import softmax
 from model import BasicModel
 from utils.utility import *
+import tensorflow as tf
 
 class ANMM_linear(BasicModel):
     def __init__(self, config):
