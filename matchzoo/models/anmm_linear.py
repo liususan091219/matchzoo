@@ -36,8 +36,8 @@ class ANMM_linear(BasicModel):
         self.set_default('dropout_rate', 0.)
         self.config.update(config)
 
-    def get_doc(self, fieldname):
-        doc = Input(name=fieldname, shape=(self.config['text1_maxlen'], self.config['bin_num']))
+    def get_docz(self, doc):
+        
         #show_layer_info(fieldname, doc)
         z = doc
         #z = Dropout(rate=self.config['dropout_rate'])(z)
@@ -54,7 +54,7 @@ class ANMM_linear(BasicModel):
         #show_layer_info('Permute', z)
         z = Reshape((self.config['text1_maxlen'],))(z)
         #show_layer_info('z shape', z)
-	return z, doc
+	return z
 
     def get_attention(self, query): 
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = False)
@@ -76,10 +76,13 @@ class ANMM_linear(BasicModel):
             y = K.batch_dot(a, b, axis=1)
             y = K.einsum('ijk, ikl->ijl', a, b)
             return y
-        query = Input(name='query', shape=(self.config['text1_maxlen'],))
-    	title_z, title = self.get_doc("title")
-    	question_z, question = self.get_doc("question")
-    	answer_z, answer = self.get_doc("answer")
+        query = Input(name="query", shape=(self.config['text1_maxlen'],))
+        title = Input(name="title", shape=(self.config['text1_maxlen'], self.config['bin_num']))
+    	question = Input(name="question", shape=(self.config['text1_maxlen'], self.config['bin_num']))
+        answer = Input(name="answer", shape=(self.config['text1_maxlen'], self.config['bin_num']))
+        title_z = self.get_docz(title)
+    	question_z = self.get_docz(question)
+    	answer_z = self.get_docz(answer)
     	q_w = self.get_attention(query)
         out_title = Dot(axes= [1, 1])([title_z, q_w])
         out_question = Dot(axes = [1, 1])([question_z, q_w])
