@@ -42,6 +42,7 @@ class ANMM(BasicModel):
             y = K.batch_dot(a, b, axis=1)
             y = K.einsum('ijk, ikl->ijl', a, b)
             return y
+        # here "query" and "doc" are the name
         query = Input(name='query', shape=(self.config['text1_maxlen'],))
         show_layer_info('Input', query)
         doc = Input(name='doc', shape=(self.config['text1_maxlen'], self.config['bin_num']))

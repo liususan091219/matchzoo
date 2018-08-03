@@ -87,7 +87,7 @@ class ANMM_linear(BasicModel):
         out_title = Dot(axes= [1, 1])([title_z, q_w])
         out_question = Dot(axes = [1, 1])([question_z, q_w])
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
-        out_ = tf.concat([out_title, out_question, out_answer], 1)
+        out_ = Concatenate()([out_title, out_question, out_answer])
         out_ = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(out_)
         out_ = Lambda(lambda x: softmax(x, axis=1), output_shape=(1, ))(out_)
         show_layer_info("out layer", out_)

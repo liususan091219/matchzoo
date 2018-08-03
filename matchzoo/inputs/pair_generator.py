@@ -588,7 +588,7 @@ class DRMM_PairGenerator_linear(PairBasicGenerator_linear):
             X2[i*2], X2_len[i*2]   = self.cal_hist(d1, d2p, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2p_len
             X2[i*2+1], X2_len[i*2+1] = self.cal_hist(d1, d2n, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2n_len
             X3[i*2], X3_len[i*2] = self.cal_hist(d1, d3p, self.data3, self.hist_feats_question, self.data1_maxlen, self.hist_size), d3p_len
-            X3[i*2+1], X3_len[i*2+1] = self.cal_hist(d1, d3n, self.data3, self.hist_feats_quesiton, self.data1_maxlen, self.hist_size), d3n_len
+            X3[i*2+1], X3_len[i*2+1] = self.cal_hist(d1, d3n, self.data3, self.hist_feats_question, self.data1_maxlen, self.hist_size), d3n_len
             X4[i*2], X4_len[i*2+1] = self.cal_hist(d1, d4p, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4p_len
             X4[i*2+1], X4_len[i*2+1] = self.cal_hist(d1, d4n, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4n_len
         return X1, X1_len, X2, X2_len, X3, X3_len, X4, X4_len, Y
