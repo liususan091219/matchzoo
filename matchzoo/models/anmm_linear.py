@@ -35,7 +35,7 @@ class ANMM_linear(BasicModel):
         self.set_default('dropout_rate', 0.)
         self.config.update(config)
 
-    def get_doc(fieldname):
+    def get_doc(self, fieldname):
         doc = Input(name=fieldname, shape=(self.config['text1_maxlen'], self.config['bin_num']))
         #show_layer_info(fieldname, doc)
         z = doc
@@ -55,7 +55,7 @@ class ANMM_linear(BasicModel):
         #show_layer_info('z shape', z)
 	return z
 
-    def get_attention(): 
+    def get_attention(self): 
         query = Input(name='query', shape=(self.config['text1_maxlen'],))
         #show_layer_info('Input', query)
 
@@ -78,14 +78,14 @@ class ANMM_linear(BasicModel):
             y = K.batch_dot(a, b, axis=1)
             y = K.einsum('ijk, ikl->ijl', a, b)
             return y
-    	title = get_doc("title")
-    	question = get_doc("question")
-    	answer = get_doc("answer")
-    	q_w = get_attention()
+    	title = self.get_doc("title")
+    	question = self.get_doc("question")
+    	answer = self.get_doc("answer")
+    	q_w = self.get_attention()
         out_title = Dot(axes= [1, 1])([title, q_w])
         out_question = Dot(axes = [1, 1])([question, q_w])
         out_answer = Dot(axes = [1, 1])([answer, q_w])
-        out_ = [out_title, out_question, out_answer]
+        out_ = tf.concat([out_title, out_question, out_answer], 1)
         out_ = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(out_)
         out_ = Lambda(lambda x: softmax(x, axis=1), output_shape=(1, ))(out_)
         show_layer_info("out layer", out_)
