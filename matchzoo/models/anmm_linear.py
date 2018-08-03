@@ -54,7 +54,7 @@ class ANMM_linear(BasicModel):
         #show_layer_info('Permute', z)
         z = Reshape((self.config['text1_maxlen'],))(z)
         #show_layer_info('z shape', z)
-	return z
+	return z, doc
 
     def get_attention(self, query): 
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = False)
@@ -77,16 +77,16 @@ class ANMM_linear(BasicModel):
             y = K.einsum('ijk, ikl->ijl', a, b)
             return y
         query = Input(name='query', shape=(self.config['text1_maxlen'],))
-    	title = self.get_doc("title")
-    	question = self.get_doc("question")
-    	answer = self.get_doc("answer")
+    	title_z, title = self.get_doc("title")
+    	question_z, question = self.get_doc("question")
+    	answer_z, answer = self.get_doc("answer")
     	q_w = self.get_attention(query)
-        out_title = Dot(axes= [1, 1])([title, q_w])
-        out_question = Dot(axes = [1, 1])([question, q_w])
-        out_answer = Dot(axes = [1, 1])([answer, q_w])
+        out_title = Dot(axes= [1, 1])([title_z, q_w])
+        out_question = Dot(axes = [1, 1])([question_z, q_w])
+        out_answer = Dot(axes = [1, 1])([answer_z, q_w])
         out_ = tf.concat([out_title, out_question, out_answer], 1)
         out_ = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(out_)
         out_ = Lambda(lambda x: softmax(x, axis=1), output_shape=(1, ))(out_)
         show_layer_info("out layer", out_)
-        model = Model(inputs=[query, doc], outputs=[out_])
+        model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model
