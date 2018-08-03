@@ -422,9 +422,9 @@ class DRMM_ListGenerator_linear(ListBasicGenerator_linear):
                     d3_len = len(d3_cont)
                     d4_cont = list(self.data4[d4])
                     d4_len = len(d4_cont)
-                    X2[j], X2_len[j] = self.cal_hist(d1, d2, self.data2, self.data1_maxlen, self.hist_size), d2_len
-                    X3[j], X3_len[j] = self.cal_hist(d1, d3, self.data3, self.data1_maxlen, self.hist_size), d3_len
-                    X4[j], X4_len[j] = self.cal_hist(d1, d4, self.data4, self.data1_maxlen, self.hist_size), d4_len
+                    X2[j], X2_len[j] = self.cal_hist(d1, d2, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2_len
+                    X3[j], X3_len[j] = self.cal_hist(d1, d3, self.data3, self.hist_feats_question, self.data1_maxlen, self.hist_size), d3_len
+                    X4[j], X4_len[j] = self.cal_hist(d1, d4, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4_len
                     ID_pairs.append((d1, d2, d3, d4))
                     Y[j] = l
                     j += 1
@@ -475,9 +475,9 @@ class DRMM_ListGenerator_linear(ListBasicGenerator_linear):
                     d4_cont = list(self.data4[d4])
                     d4_len = len(d4_cont)
                     X1[j, :d1_len], X1_len[j] = d1_cont[:d1_len], d1_len
-                    X2[j], X2_len[j] = self.cal_hist(d1, d2, self.data1_maxlen, self.hist_size), d2_len
-                    X3[j], X3_len[j] = self.cal_hist(d1, d3, self.data1_maxlen, self.hist_size), d3_len
-                    X4[j], X4_len[j] = self.cal_hist(d1, d3, self.data1_maxlen, self.hist_size), d4_len
+                    X2[j], X2_len[j] = self.cal_hist(d1, d2, self.data2, self.hist_feats_title, self.data1_maxlen, self.hist_size), d2_len
+                    X3[j], X3_len[j] = self.cal_hist(d1, d3, self.data3, self.hist_feats_question, self.data1_maxlen, self.hist_size), d3_len
+                    X4[j], X4_len[j] = self.cal_hist(d1, d4, self.data4, self.hist_feats_answer, self.data1_maxlen, self.hist_size), d4_len
                     Y[j] = l
                     j += 1
             x1_ls.append(X1)
