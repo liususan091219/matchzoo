@@ -22,6 +22,7 @@ class ANMM(BasicModel):
         self.setup(config)
         self.initializer_fc = keras.initializers.RandomUniform(minval=-0.1, maxval=0.1, seed=11)
         self.initializer_gate = keras.initializers.RandomUniform(minval=-0.01, maxval=0.01, seed=11)
+        
         if not self.check():
             raise TypeError('[ANMM] parameter check wrong')
         print('[ANMM] init done', end='\n')

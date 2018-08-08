@@ -23,6 +23,7 @@ class ANMM_linear(BasicModel):
         self.setup(config)
         self.initializer_fc = keras.initializers.RandomUniform(minval=-0.1, maxval=0.1, seed=11)
         self.initializer_gate = keras.initializers.RandomUniform(minval=-0.01, maxval=0.01, seed=11)
+        self.initializer_linear = keras.initializers.RandomUniform(minval=-0.5, maxval=0.5, seed=11)
         if not self.check():
             raise TypeError('[ANMM] parameter check wrong')
         print('[ANMM] init done', end='\n')
@@ -47,7 +48,7 @@ class ANMM_linear(BasicModel):
             z = dense_layer(z)
             z = Activation('tanh')(z)
             #show_layer_info('Dense', z)
-        dense_layer2 = Dense(self.config['hidden_sizes'][self.config['num_layers']-1], kernel_initializer=self.initializer_fc)
+        dense_layer2 = Dense(self.config['hidden_sizes'][self.config['num_layers']-1], kernel_initializer=self.initializer_fc, activation="tanh")
         z = dense_layer2(z)
         #show_layer_info('Dense', z)
         z = Permute((2, 1))(z)
@@ -88,8 +89,7 @@ class ANMM_linear(BasicModel):
         out_question = Dot(axes = [1, 1])([question_z, q_w])
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
         out_ = Concatenate()([out_title, out_question, out_answer])
-        out_ = Dense(1, kernel_initializer=self.initializer_gate, use_bias=False)(out_)
-        out_ = Lambda(lambda x: softmax(x, axis=1), output_shape=(1, ))(out_)
+        out_ = Dense(1, kernel_initializer=self.initializer_linear, activation = "tanh")(out_)
         show_layer_info("out layer", out_)
         model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model
