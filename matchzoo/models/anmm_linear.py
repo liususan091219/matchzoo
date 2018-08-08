@@ -23,7 +23,7 @@ class ANMM_linear(BasicModel):
         self.setup(config)
         self.initializer_fc = keras.initializers.RandomUniform(minval=-0.1, maxval=0.1, seed=11)
         self.initializer_gate = keras.initializers.RandomUniform(minval=-0.01, maxval=0.01, seed=11)
-        self.initializer_linear = keras.initializers.RandomUniform(minval=-0.5, maxval=0.5, seed=11)
+        self.initializer_linear = keras.initializers.Constant(value=0.33333)
         if not self.check():
             raise TypeError('[ANMM] parameter check wrong')
         print('[ANMM] init done', end='\n')
@@ -89,7 +89,7 @@ class ANMM_linear(BasicModel):
         out_question = Dot(axes = [1, 1])([question_z, q_w])
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
         out_ = Concatenate()([out_title, out_question, out_answer])
-        out_ = Dense(1, kernel_initializer=self.initializer_linear, activation = "tanh")(out_)
+        out_ = Dense(1, kernel_initializer=self.initializer_linear, use_bias=False)(out_)
         show_layer_info("out layer", out_)
         model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model
