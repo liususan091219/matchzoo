@@ -11,6 +11,7 @@ from keras.layers import *
 from keras.activations import softmax
 from model import BasicModel
 from utils.utility import *
+from keras import backend as K
 import tensorflow as tf
 
 class ANMM_linear(BasicModel):
@@ -88,7 +89,7 @@ class ANMM_linear(BasicModel):
         out_title = Dot(axes= [1, 1])([title_z, q_w])
         out_question = Dot(axes = [1, 1])([question_z, q_w])
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
-        param = constant([0.5, 0.3, 0.2])
-        out_ = dot([out_title, out_question, out_answer], transpose(param))
+        param = K.constant([0.5, 0.3, 0.2])
+        out_ = K.dot([out_title, out_question, out_answer], K.transpose(param))
         model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model
