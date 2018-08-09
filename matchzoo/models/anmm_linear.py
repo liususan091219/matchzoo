@@ -88,9 +88,6 @@ class ANMM_linear(BasicModel):
         out_title = Dot(axes= [1, 1])([title_z, q_w])
         out_question = Dot(axes = [1, 1])([question_z, q_w])
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
-        out_ = Concatenate()([out_title, out_question, out_answer])
-        lambdalayer = Lambda(lambda x:)
-        out_ = Dense(1, use_bias=False, activation = "linear")(out_)
-        show_layer_info("out layer", out_)
+        out_ = dot([out_title, out_question, out_answer], [0.5, 0.3, 0.2])
         model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model
