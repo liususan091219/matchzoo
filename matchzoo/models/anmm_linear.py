@@ -90,9 +90,8 @@ class ANMM_linear(BasicModel):
         out_title = Dot(axes= [1, 1])([title_z, q_w])
         out_question = Dot(axes = [1, 1])([question_z, q_w])
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
-        param = K.constant([0.5, 0.3, 0.2])
-        pred = K.placeholder(shape = (3,), dtype="float32")
-        K.set_value(pred, np.array([out_title, out_question, out_answer]))
-        out_ = K.dot(pred, K.transpose(param))
+        param = np.array([0.5, 0.3, 0.2])
+        pred = np.array([out_title, out_question, out_answer])
+        out_ = dot([K.variable(param), K.variable(pred)])
         model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model
