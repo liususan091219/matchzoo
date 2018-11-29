@@ -92,6 +92,6 @@ class ANMM_linear(BasicModel):
         out_answer = Dot(axes = [1, 1])([answer_z, q_w])
         K_param = K.constant(value=[[0.5, 0.3, 0.2]], dtype="float32")
         out_ = Concatenate()([out_title, out_question, out_answer])
-        out_ = Lambda(lambda x: K.dot(x, K.transpose(K_param)), output_shape(1,))(out_)
+        out_ = Lambda(lambda x: K.dot(x, K.transpose(K_param)), output_shape=(1,))(out_)
         model = Model(inputs=[query, title, question, answer], outputs=[out_])
         return model

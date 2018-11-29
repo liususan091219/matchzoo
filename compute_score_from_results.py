@@ -15,10 +15,10 @@ def eval_score(y_true, y_pred, eval_name):
 	labellist = score2labellist(y_true, y_pred)
 	if eval_name == "mrr":
 		return mrr(labellist)
+	elif eval_name == "ndcg@5":
+		return ndcg(labellist, 5)
 	elif eval_name == "ndcg@10":
 		return ndcg(labellist, 10)
-	elif eval_name == "ndcg@100":
-		return ndcg(labellist, 100)
 
 def mrr(labellist):
         score =0
@@ -45,8 +45,8 @@ def ndcg(labellist, topK):
                 idcg += 1.0 / math.log(float(i + 2), 2.0)
 	return dcg / idcg
 
-def load_qid2result(lang, component):
-	fin = open("../MatchZoo_data/result/" + lang + "/anmm." + component + ".txt", "r")
+def load_qid2result(lang, component, thismethod):
+	fin = open("../MatchZoo_data/result/" + lang + "/" + thismethod + "." + component + ".txt", "r")
 	qid2qidlist = {}
 	qid2gtlist = {}
 	qid2qid2pred = {}
@@ -146,14 +146,15 @@ def main(argv):
 	qid2y_pred = {}
 	lang = sys.argv[1]
 	metric = sys.argv[2]
+	thismethod = sys.argv[3]
 	components = ["title", "question", "answer"]
-	coeffs = [1.0, 0.25, 0.25]
-	fout_debug = open("../MatchZoo_data/result/java/eval_score_2.txt", "w")
+	coeffs = [1.0, 0.5, 0.5]
+	fout_score = open("../MatchZoo_data/ttest/" + lang + "_" + metric + "_" + thismethod + ".txt", "w")
 	qid2qid2sum = {}
 	for i in range(0, 3):
 		component = components[i]
 		coeff = coeffs[i]
-		_, _, qid2qid2pred, qid2qid2gt = load_qid2result(lang, component)
+		_, _, qid2qid2pred, qid2qid2gt = load_qid2result(lang, component, thismethod)
 		for qid1 in qid2qid2pred.keys():
 			for qid2 in qid2qid2pred[qid1].keys():
 				qid2qid2sum.setdefault(qid1, {})
@@ -165,16 +166,17 @@ def main(argv):
 					pdb.set_trace()
 					print qid1, qid2, component
 					sys.exit(1)
-	print(compute_score_final(qid2qid2sum, qid2qid2gt, metric))
+	print(compute_score_final(qid2qid2sum, qid2qid2gt, metric, fout_score))
 	#for component in components:
 	#	qid2qidlist, qid2gtlist = load_qid2result(lang, component)
 	#	print(len(qid2qidlist))
 	#	avgscore = 0.0
 	#	scorecount = 0
 
-def compute_score_final(qid2qid2pred, qid2qid2gt, metric):
+def compute_score_final(qid2qid2pred, qid2qid2gt, metric, fout_score):
 	avgscore = 0
 	scorecount = 0
+	#fout = open(, "w")
 	for qid1 in qid2qid2pred.keys():
 		qid2pred = qid2qid2pred[qid1]
 		qid2gt = qid2qid2gt[qid1]
@@ -187,8 +189,10 @@ def compute_score_final(qid2qid2pred, qid2qid2gt, metric):
 			gtlist.append(qid2gt[qid2])
 		evalscore = eval_score(gtlist, ylist, metric)
 		avgscore += evalscore
+		fout_score.write(str(evalscore) + "\n")
 		scorecount += 1
 	avgscore /= scorecount	
+	fout_score.close()
 	return avgscore
 #	print(avgscore), scorecount
 	

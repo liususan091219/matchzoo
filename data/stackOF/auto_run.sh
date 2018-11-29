@@ -1,3 +1,3 @@
-bash run_data.sh java title stackOF
-bash run_data.sh java question stackOF
-bash run_data.sh java answer stackOF
+bash run_data.sh $1 title stackOF
+bash run_data.sh $1 question stackOF
+bash run_data.sh $1 answer stackOF

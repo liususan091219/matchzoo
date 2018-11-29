@@ -2,7 +2,7 @@
 # coding: utf-8
 from __future__ import  print_function
 
-import os
+import os, shutil
 import sys
 import random
 random.seed(49999)
@@ -65,6 +65,7 @@ if __name__ == "__main__":
 	prepare.save_relation(relation_dstdir + 'relation_train.txt', rel_train)
 	prepare.save_relation(relation_dstdir + 'relation_valid.txt', rel_valid)
 	prepare.save_relation(relation_dstdir + 'relation_test.txt', rel_test)
+	shutil.copy(relation_dstdir + "relation_test.txt", relation_dstdir + "relation_valid.txt")
 	print('Preparation finished ...')
 	
 	preprocessor = Preprocess(word_stem_config={'enable': False}, word_filter_config={'min_freq': 0})
