@@ -199,8 +199,8 @@ class PairGenerator(PairBasicGenerator):
         super(PairGenerator, self).__init__(data_root, config=config)
         self.__name = 'PairGenerator'
         self.config = config
-        self.data1 = config['data1']
-        self.data2 = config['data2']
+        self.data1 = config['data1'] if config['data1'] else None
+        self.data2 = config['data2'] if config['data2'] else None
         self.data1_maxlen = config['text1_maxlen']
         self.data2_maxlen = config['text2_maxlen']
         self.fill_word = config['vocab_size'] - 1
@@ -391,7 +391,6 @@ class DRMM_PairGenerator(PairBasicGenerator):
         self.data2 = config['data2']
         self.data1_maxlen = config['text1_maxlen']
         #self.data2_maxlen = config['text2_maxlen']
-        #self.embed = config['embed']
         if 'bin_num' in config:
             self.hist_size = config['bin_num']
         else:
@@ -404,6 +403,7 @@ class DRMM_PairGenerator(PairBasicGenerator):
             self.hist_feats = {}
             for idx, (label, d1, d2) in enumerate(self.rel):
                 self.hist_feats[(d1, d2)] = hist_feats[idx]
+                self.d1len = len(hist_feats[idx]) / self.hist_size
             self.use_hist_feats = True
         if config['use_iter']:
             self.batch_iter = self.get_batch_iter()
@@ -413,14 +413,12 @@ class DRMM_PairGenerator(PairBasicGenerator):
 
     def cal_hist(self, t1, t2, data1_maxlen, hist_size):
         mhist = np.zeros((data1_maxlen, hist_size), dtype=np.float32)
-        t1_cont = list(self.data1[t1])
-        t2_cont = list(self.data2[t2])
-        d1len = len(t1_cont)
+
         assert (t1, t2) in self.hist_feats
         curr_pair_feats = list(self.hist_feats[(t1, t2)])
-        caled_hist = np.reshape(curr_pair_feats, (d1len, hist_size))
-        if d1len < data1_maxlen:
-            mhist[:d1len, :] = caled_hist[:, :]
+        caled_hist = np.reshape(curr_pair_feats, (self.d1len, hist_size))
+        if self.d1len < data1_maxlen:
+            mhist[:self.d1len, :] = caled_hist[:, :]
         else:
             mhist[:, :] = caled_hist[:data1_maxlen, :]
         return mhist

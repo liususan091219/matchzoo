@@ -90,7 +90,6 @@ def load_model(config):
         mo = model.build()
     return mo
 
-
 def train(config, data_root, log_file):
 
     print(json.dumps(config, indent=2), end='\n')
@@ -106,8 +105,6 @@ def train(config, data_root, log_file):
     # read input config
     input_conf = config['inputs']
     share_input_conf = input_conf['share']
-
-
     # list all input tags and construct tags config
     input_train_conf = OrderedDict()
     input_eval_conf = OrderedDict()
@@ -124,36 +121,17 @@ def train(config, data_root, log_file):
             input_eval_conf[tag].update(input_conf[tag])
     print('[Input] Process Input Tags. %s in TRAIN, %s in EVAL.' % (input_train_conf.keys(), input_eval_conf.keys()), end='\n')
 
-    # collect dataset identification
-    dataset = {}
-    for tag in input_conf:
-        if tag != 'share' and input_conf[tag]['phase'] == 'PREDICT':
-            continue
-        if 'text1_corpus' in input_conf[tag]:
-            datapath = data_root + input_conf[tag]['text1_corpus']
-            if datapath not in dataset:
-                dataset[datapath], _ = read_data(datapath)
-        if 'text2_corpus' in input_conf[tag]:
-            datapath = data_root + input_conf[tag]['text2_corpus']
-            if datapath not in dataset:
-                dataset[datapath], _ = read_data(datapath)
-    print('[Dataset] %s Dataset Load Done.' % len(dataset), end='\n')
-
     # initial data generator
     train_gen = OrderedDict()
     eval_gen = OrderedDict()
 
     for tag, conf in input_train_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[data_root + conf['text1_corpus']]
-        conf['data2'] = dataset[data_root + conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
         train_gen[tag] = generator(data_root,  config = conf )
 
     for tag, conf in input_eval_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[data_root + conf['text1_corpus']]
-        conf['data2'] = dataset[data_root + conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
         eval_gen[tag] = generator(data_root,  config = conf )
 
@@ -229,6 +207,10 @@ def predict(config, data_root):
     print(json.dumps(config, indent=2), end='\n')
     input_conf = config['inputs']
     share_input_conf = input_conf['share']
+<<<<<<< HEAD
+=======
+
+>>>>>>> bceb8febdb841bd8bc932308b529584253e45160
     # list all input tags and construct tags config
     input_predict_conf = OrderedDict()
     for tag in input_conf.keys():
@@ -240,31 +222,13 @@ def predict(config, data_root):
             input_predict_conf[tag].update(input_conf[tag])
     print('[Input] Process Input Tags. %s in PREDICT.' % (input_predict_conf.keys()), end='\n')
 
-    # collect dataset identification
-    dataset = {}
-    for tag in input_conf:
-        if tag == 'share' or input_conf[tag]['phase'] == 'PREDICT':
-            if 'text1_corpus' in input_conf[tag]:
-                datapath = data_root + input_conf[tag]['text1_corpus']
-                if datapath not in dataset:
-                    dataset[datapath], _ = read_data(datapath)
-            if 'text2_corpus' in input_conf[tag]:
-                datapath = data_root + input_conf[tag]['text2_corpus']
-                if datapath not in dataset:
-                    dataset[datapath], _ = read_data(datapath)
-    print('[Dataset] %s Dataset Load Done.' % len(dataset), end='\n')
-
     # initial data generator
     predict_gen = OrderedDict()
 
     for tag, conf in input_predict_conf.items():
         print(conf, end='\n')
-        conf['data1'] = dataset[data_root + conf['text1_corpus']]
-        conf['data2'] = dataset[data_root + conf['text2_corpus']]
         generator = inputs.get(conf['input_type'])
         predict_gen[tag] = generator(data_root,
-                                    #data1 = dataset[conf['text1_corpus']],
-                                    #data2 = dataset[conf['text2_corpus']],
                                      config = conf )
 
     ######## Read output config ########
