@@ -388,8 +388,8 @@ class PairGenerator_Feats(PairBasicGenerator):
         if not self.check():
             raise TypeError('[PairGenerator] parameter check wrong.')
 
-        self.data1 = config['data1']
-        self.data2 = config['data2']
+        self.data1 = config['data1'] if config['data1'] else None
+        self.data2 = config['data2'] if config['data1'] else None
         self.data1_maxlen = config['text1_maxlen']
         self.data2_maxlen = config['text2_maxlen']
         self.fill_word = config['vocab_size'] - 1
