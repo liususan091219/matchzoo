@@ -207,10 +207,7 @@ def predict(config, data_root):
     print(json.dumps(config, indent=2), end='\n')
     input_conf = config['inputs']
     share_input_conf = input_conf['share']
-<<<<<<< HEAD
-=======
-
->>>>>>> bceb8febdb841bd8bc932308b529584253e45160
+    
     # list all input tags and construct tags config
     input_predict_conf = OrderedDict()
     for tag in input_conf.keys():
