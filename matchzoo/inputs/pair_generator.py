@@ -396,7 +396,7 @@ class DRMM_PairGenerator(PairBasicGenerator):
         else:
             self.hist_size = config['hist_size']
         self.fill_word = config['vocab_size'] - 1
-        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'embed'])
+        self.check_list.extend(['data1', 'data2', 'text1_maxlen'])
         self.use_hist_feats = False
         if 'hist_feats_file' in config:
             hist_feats = read_features_without_id(data_root + config['hist_feats_file'])
