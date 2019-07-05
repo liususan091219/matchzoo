@@ -288,8 +288,6 @@ class DRMM_PairGenerator(PairBasicGenerator):
         self.data1 = config['data1']
         self.data2 = config['data2']
         self.data1_maxlen = config['text1_maxlen']
-        self.data2_maxlen = config['text2_maxlen']
-        self.embed = config['embed']
         if 'bin_num' in config:
             self.hist_size = config['bin_num']
         else:
@@ -314,25 +312,14 @@ class DRMM_PairGenerator(PairBasicGenerator):
         t1_cont = list(self.data1[t1])
         t2_cont = list(self.data2[t2])
         d1len = len(t1_cont)
-        if self.use_hist_feats:
-            assert (t1, t2) in self.hist_feats
-            curr_pair_feats = list(self.hist_feats[(t1, t2)])
-            caled_hist = np.reshape(curr_pair_feats, (d1len, hist_size))
-            if d1len < data1_maxlen:
-                mhist[:d1len, :] = caled_hist[:, :]
-            else:
-                mhist[:, :] = caled_hist[:data1_maxlen, :]
+
+        assert (t1, t2) in self.hist_feats
+        curr_pair_feats = list(self.hist_feats[(t1, t2)])
+        caled_hist = np.reshape(curr_pair_feats, (d1len, hist_size))
+        if d1len < data1_maxlen:
+            mhist[:d1len, :] = caled_hist[:, :]
         else:
-            t1_rep = self.embed[t1_cont]
-            t2_rep = self.embed[t2_cont]
-            mm = t1_rep.dot(np.transpose(t2_rep))
-            for (i,j), v in np.ndenumerate(mm):
-                if i >= data1_maxlen:
-                    break
-                vid = int((v + 1.) / 2. * ( hist_size - 1.))
-                mhist[i][vid] += 1.
-            mhist += 1.
-            mhist = np.log10(mhist)
+            mhist[:, :] = caled_hist[:data1_maxlen, :]
         return mhist
 
     def get_batch_static(self):
