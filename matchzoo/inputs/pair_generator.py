@@ -391,7 +391,6 @@ class DRMM_PairGenerator(PairBasicGenerator):
         self.data2 = config['data2']
         self.data1_maxlen = config['text1_maxlen']
         #self.data2_maxlen = config['text2_maxlen']
-        self.embed = config['embed']
         if 'bin_num' in config:
             self.hist_size = config['bin_num']
         else:
