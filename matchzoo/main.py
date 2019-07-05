@@ -371,7 +371,7 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--phase', default='train', help='Phase: Can be train or predict, the default value is train.')
     parser.add_argument('--model_file', default='./models/arci.config', help='Model_file: MatchZoo model file for the chosen model.')
-    parser.add_argument("--data_root", default="/Data/work/xliu93/stackoverflow/MatchZoo_data/", help="data root")
+    parser.add_argument("--data_root", default="../MatchZoo_data/", help="data root")
     args = parser.parse_args()
     model_file =  args.model_file
     data_root = args.data_root
