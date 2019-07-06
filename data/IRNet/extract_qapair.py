@@ -9,9 +9,9 @@ if __name__ == '__main__':
 
     fout2 = open("../../../MatchZoo_data/irnet/corpus.txt", "w")
 
-    answer_int = 0
+    question_int = answer_int = 0
 
-    answer_int = extract_pair(sql_data, "train", fout2, db2colstr2tablist, answer_int)
-    extract_pair(val_sql_data, "dev", fout2, db2colstr2tablist, answer_int)
+    question_int, answer_int = extract_pair(sql_data, "train", fout2, db2colstr2tablist, question_int, answer_int)
+    extract_pair(val_sql_data, "dev", fout2, db2colstr2tablist, question_int, answer_int)
 
     fout2.close()
