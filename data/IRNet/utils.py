@@ -303,7 +303,7 @@ def load_table(table_path):
                 if table_id != -1:
                     colstr2tablist[colstr].add(table_names[table_id])
                 else:
-                    colstr2tablist[colstr].add(-1)
+                    colstr2tablist[colstr].add("-1")
 
             db2colstr2tablist[db_id] = colstr2tablist
 
