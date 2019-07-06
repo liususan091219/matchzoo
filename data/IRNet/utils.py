@@ -9,6 +9,13 @@ regex = re.compile("^(?P<action>[a-zA-Z0-9]*)\((?P<colid>\d+)\)$")
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+def lemmatize_str(g_str):
+        str_tokens = g_str.split()
+        str_conc = ""
+        for each_str in str_tokens:
+                str_conc += wordnet_lemmatizer.lemmatize(each_str.lower()) + " "
+        return str_conc.rstrip()
+
 def extract_col(g_str):
         tokens = g_str.split()
         colid_set = set()
@@ -32,7 +39,7 @@ def extract_pair(sql_data, train_dev, fout2):
         this_data = sql_data[i]
         db_id = this_data["db_id"]
 
-        this_src = this_data["question"]
+        this_src = lemmatize_str(this_data["question"])
         this_colset = this_data["col_set"]
 
         this_pos_labels = extract_col(this_data["rule_label"])
