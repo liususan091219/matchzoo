@@ -6,6 +6,9 @@ wordnet_lemmatizer = WordNetLemmatizer()
 
 regex = re.compile("^(?P<action>[a-zA-Z0-9]*)\((?P<colid>\d+)\)$")
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 def extract_col(g_str):
         tokens = g_str.split()
         colid_set = set()
