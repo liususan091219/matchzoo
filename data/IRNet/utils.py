@@ -37,7 +37,7 @@ def extract_col(g_str):
                    colid_set.add(colid)
         return colid_set
 
-def extract_pair(sql_data, train_dev, fout2):
+def extract_pair(sql_data, train_dev, fout2, db2colstr2tablist):
     answer_int = 0
 
     fout = open("../../../MatchZoo_data/irnet/relation_" + train_dev + ".txt", "w")
@@ -55,7 +55,7 @@ def extract_pair(sql_data, train_dev, fout2):
 
         this_pos_labels = extract_col(this_data["rule_label"])
 
-        fout2.write(question_id + " " + this_src + "\n")
+        fout2.write(question_id + "\t" + this_src + "\n")
 
         for j in range(0, len(this_colset)):
 
@@ -68,10 +68,13 @@ def extract_pair(sql_data, train_dev, fout2):
                 this_label = 0
 
             fout.write(str(this_label) + "\t" + question_id + "\t" + answer_id + "\n")
-
             this_colstr = this_colset[j]
 
-            fout2.write(answer_id + "\t" + this_colstr + "\t" + db_id + "\n")
+            fout2.write(answer_id + "\t" + this_colstr + "\t" + db_id + "\t")
+            tablelist = db2colstr2tablist[db_id][this_colstr]
+
+            fout2.write(",".join(tablelist) + "\n")
+
 
     fout.close()
 
@@ -273,5 +276,35 @@ def load_dataset(dataset_dir, table_path):
     dev_sql_data, dev_table_data, schemas = load_data_new(DEV_PATH, table_data, val_data)
     test_sql_data, test_table_data, schemas = load_data_new(TEST_PATH, table_data, val_data)
 
+    db2colstr2tablist = load_table(table_path)
+
     return train_sql_data, train_table_data, dev_sql_data, dev_table_data,\
-            test_sql_data, test_table_data, schemas_all
+            test_sql_data, test_table_data, schemas_all, db2colstr2tablist
+
+def load_table(table_path):
+    with open(table_path) as inf:
+        db2colstr2tablist = {}
+
+        table_data = json.load(inf)
+
+        for i in range(0, len(table_data)):
+            db_id = table_data[i]["db_id"]
+
+            column_names = table_data[i]["column_names"]
+            table_names = table_data[i]["table_names"]
+
+            colstr2tablist = {}
+
+            for j in range(0, len(column_names)):
+                table_id = column_names[j][0]
+                colstr = column_names[j][1]
+
+                colstr2tablist.setdefault(colstr, set())
+                if table_id != -1:
+                    colstr2tablist[colstr].add(table_names[table_id])
+                else:
+                    colstr2tablist[colstr].add(-1)
+
+            db2colstr2tablist[db_id] = colstr2tablist
+
+        return db2colstr2tablist
