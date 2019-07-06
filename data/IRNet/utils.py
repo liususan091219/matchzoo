@@ -50,7 +50,7 @@ def extract_pair(sql_data, train_dev, fout2):
         db_id = this_data["db_id"]
 
         this_src = remove_stopwords(this_data["question"])
-        this_src = this_src
+        this_src = lemmatize_str(this_src)
         this_colset = this_data["col_set"]
 
         this_pos_labels = extract_col(this_data["rule_label"])
