@@ -12,7 +12,7 @@ sys.setdefaultencoding('utf8')
 stopwords = set(nltk.corpus.stopwords.words('english'))
 
 def remove_stopwords(g_str):
-    str_tokens = g_str.split()
+    str_tokens = g_str.lower().split()
     str_conc = ""
     for each_str in str_tokens:
         if each_str not in stopwords:
