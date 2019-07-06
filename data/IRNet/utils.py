@@ -23,7 +23,7 @@ def extract_col(g_str):
 def extract_pair(sql_data, train_dev, fout2):
     answer_int = 0
 
-    fout = open("../../../MatchZoo_data/WikiQA/relation_" + train_dev + ".txt", "w")
+    fout = open("../../../MatchZoo_data/irnet/relation_" + train_dev + ".txt", "w")
 
     for i in range(0, len(sql_data)):
 
