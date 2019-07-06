@@ -276,7 +276,7 @@ def load_dataset(dataset_dir, table_path):
     dev_sql_data, dev_table_data, schemas = load_data_new(DEV_PATH, table_data, val_data)
     test_sql_data, test_table_data, schemas = load_data_new(TEST_PATH, table_data, val_data)
 
-    db2colstr2tablist = load_table(table_path)
+    db2colstr2tablist = load_table(os.path.join(table_path, "tables_mapped.json"))
 
     return train_sql_data, train_table_data, dev_sql_data, dev_table_data,\
             test_sql_data, test_table_data, schemas_all, db2colstr2tablist
