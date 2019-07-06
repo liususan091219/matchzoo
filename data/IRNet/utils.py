@@ -37,8 +37,7 @@ def extract_col(g_str):
                    colid_set.add(colid)
         return colid_set
 
-def extract_pair(sql_data, train_dev, fout2, db2colstr2tablist):
-    answer_int = 0
+def extract_pair(sql_data, train_dev, fout2, db2colstr2tablist, answer_int):
 
     fout = open("../../../MatchZoo_data/irnet/relation_" + train_dev + ".txt", "w")
 
@@ -75,8 +74,9 @@ def extract_pair(sql_data, train_dev, fout2, db2colstr2tablist):
 
             fout2.write(",".join(tablelist) + "\n")
 
-
     fout.close()
+
+    return answer_int
 
 def process(sql_data, table_data, val_data):
     output_tab = {}
