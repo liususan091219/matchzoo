@@ -1,5 +1,5 @@
 import os, json
-import re, sys
+import re, sys, nltk
 from nltk.stem import WordNetLemmatizer
 
 wordnet_lemmatizer = WordNetLemmatizer()
@@ -9,12 +9,22 @@ regex = re.compile("^(?P<action>[a-zA-Z0-9]*)\((?P<colid>\d+)\)$")
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+stopwords = set(nltk.corpus.stopwords.words('english'))
+
+def remove_stopwords(g_str):
+    str_tokens = g_str.split()
+    str_conc = ""
+    for each_str in str_tokens:
+        if each_str not in stopwords:
+            str_conc += each_str + " "
+    return str_conc.rstrip()
+
 def lemmatize_str(g_str):
-        str_tokens = g_str.split()
-        str_conc = ""
-        for each_str in str_tokens:
-                str_conc += wordnet_lemmatizer.lemmatize(each_str.lower()) + " "
-        return str_conc.rstrip()
+    str_tokens = g_str.split()
+    str_conc = ""
+    for each_str in str_tokens:
+            str_conc += wordnet_lemmatizer.lemmatize(each_str.lower()) + " "
+    return str_conc.rstrip()
 
 def extract_col(g_str):
         tokens = g_str.split()
@@ -39,7 +49,8 @@ def extract_pair(sql_data, train_dev, fout2):
         this_data = sql_data[i]
         db_id = this_data["db_id"]
 
-        this_src = lemmatize_str(this_data["question"])
+        this_src = remove_stopwords(this_data["question"])
+        this_src = this_src
         this_colset = this_data["col_set"]
 
         this_pos_labels = extract_col(this_data["rule_label"])
