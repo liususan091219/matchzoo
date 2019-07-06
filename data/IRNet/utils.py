@@ -18,7 +18,7 @@ def extract_col(g_str):
         return colid_set
 
 def extract_pair(sql_data, train_dev, fout2):
-    answer_id = 0
+    answer_int = 0
 
     fout = open("../../../MatchZoo_data/WikiQA/relation_" + train_dev + ".txt", "w")
 
@@ -38,8 +38,8 @@ def extract_pair(sql_data, train_dev, fout2):
 
         for j in range(0, len(this_colset)):
 
-            answer_id = "D" + str(answer_id)
-            answer_id += 1
+            answer_id = "D" + str(answer_int)
+            answer_int += 1
 
             if j in this_pos_labels:
                 this_label = 1
