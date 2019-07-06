@@ -48,7 +48,7 @@ def extract_pair(sql_data, train_dev, fout2):
 
             fout.write(str(this_label) + "\t" + question_id + "\t" + answer_id + "\n")
 
-            this_colstr = this_colset[i]
+            this_colstr = this_colset[j]
 
             fout2.write(answer_id + "\t" + this_colstr + "\t" + db_id + "\n")
 
